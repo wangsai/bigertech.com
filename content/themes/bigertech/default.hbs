@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]><html lang="zh-CN" class="no-js lt-ie9 lt-ie8 lt-ie7"><![endif]-->
+<!--[if IE 7]><html lang="zh-CN" class="no-js lt-ie9 lt-ie8"><![endif]-->
+<!--[if IE 8]><html lang="zh-CN" class="no-js lt-ie9"><![endif]-->
+<!--[if gt IE 8]><!--><html lang="zh-CN" class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="HandheldFriendly" content="True" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>{{meta_title}}</title>
+  <meta name="description" content="{{meta_description}}" />
+  <meta name="keywords" content="笔戈科技,魅族，手机，评测，科技，博客,{{meta_title}}">
+
+  <link rel="shortcut icon" href="{{asset "dist/images/favicon.ico"}}">
+  <link rel="stylesheet" type="text/css" href="{{asset "dist/css/bigertech.min.css"}}" />
+
+  {{{block "pageStyles"}}}
+
+  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+    <script src="http://cdnjscn.b0.upaiyun.com/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="http://cdnjscn.b0.upaiyun.com/libs/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body class="{{body_class}}" id="{{body_class}}">
+
+  {{{body}}}
+
+  <script src="{{asset "dist/js/vendor/jquery-1.11.1.min.js"}}"></script>
+  <script src="{{asset "dist/js/bigertech.min.js"}}"></script>
+  <script charset="utf-8">
+    $(document).ready(function(){
+      $("img.lazy").lazyload();
+    });
+  </script>
+
+  {{{block "pageScripts"}}}
+
+  {{> "baidu_analysis"}}
+
+  <!--[if lte IE 9]>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery-placeholder/2.0.8/jquery.placeholder.min.js"></script>
+    <script charset="utf-8">
+      $('input, textarea').placeholder();
+    </script>
+  <![endif]-->
+  <!--[if IE 7]>
+	  <script src="//letskillie6.googlecode.com/svn/trunk/2/zh_CN.js"></script>
+  <![endif]-->
+</body>
+</html>

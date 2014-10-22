@@ -1,0 +1,33 @@
+<div class="bg-header">
+{{#topic}}
+	{{#if post}}
+		{{#post}}
+    <div class="bg-cover">
+			<img class="lazy" data-original="{{image}}" />
+		</div>
+
+    <div class="bg-linear">
+      <div class="bg-slogan container center-block">
+        <div class="topic-wrapper bg-description">
+					<a class="topic-wrapper-title" href="{{slug}}" target="_blank">
+          	{{title}}
+					</a>
+        </div>
+				<div class="topic-post-meta">
+					{{author}}
+					<time class="publish-time" datetime="{{date published_at timeago="ture"}}">
+						<span class="dot">•</span>{{date published_at timeago="ture"}}
+					</time>
+					<span class="count icon-commend">{{post_star}}</span>
+				</div>
+      </div>
+    </div>
+		{{/post}}
+	{{else}}
+    <a class="topic-wrapper" href="{{siteUrl}}" target="_blank">
+      <img class="topic-img lazy" data-original="{{img}}" alt="{{title}}" />
+      <span class="topic-title">{{title}}</span>
+    </a>
+	{{/if}}
+{{/topic }}
+</div>

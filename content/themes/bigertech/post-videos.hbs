@@ -1,0 +1,59 @@
+{{!< default}}
+
+{{! The comment above "< default" means - insert everything in this file into
+    the {body} of the default.hbs template, which contains our header/footer. }}
+
+{{#post}}
+  <div class="pv-banner">
+  {{> "navbar"}}
+  <div class="video-bg-img">
+    <img class="lazy" data-original="{{image}}"/>
+  </div>
+  <div class="video">
+    <div class="video-info">
+      <p class="name">{{title}}</p>
+      <span class="author">{{author}} •  <time>{{date published_at timeago="ture"}}</time></span>
+    </div>
+    <div class="embed-responsive embed-responsive-youku ">
+		    <input type="hidden" id="videoId" value="{{videoId}}">
+      <div id="youkuplayer" class="embed-responsive-item">
+      </div>
+    </div>
+    <div class="video-desc">
+        {{content}}
+    </div>
+  </div>
+</div>
+
+<div id="video-container" class="pv-container">
+  {{duoshuo_block}}
+
+</div>
+  {{post_relative limit="1"}}
+{{/post}}
+
+{{#contentFor "pageScripts"}}
+
+  <!-- 多说公共JS代码 start -->
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name: "bigertech"};
+    (function () {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';
+      ds.async = true;
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+        || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  <script type="text/javascript" src="http://player.youku.com/jsapi">
+    player = new YKU.Player('youkuplayer', {
+      styleid: '1',
+      client_id: '2cf898d1c36ea115',
+      vid: document.getElementById('videoId').value
+    });
+  </script>
+
+{{/contentFor}}

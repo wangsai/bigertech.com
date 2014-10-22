@@ -1,0 +1,37 @@
+
+{{! This is the post loop - each post will be output using this markup }}
+
+<div class="container center-block">
+  <ul class="posts">
+  {{#foreach posts}}
+    <li class="post-item">
+      <a href="{{url}}" target="_blank">
+        {{#if isVideo}}
+        <div class="isVideo icon-play desktop-display"></div>
+        {{/if}}
+        <img class="post-image left desktop-display lazy" data-original="{{image_sm}}" />
+        <h2 class="post-title">{{title}}</h2>
+      </a>
+      <div class="post-meta">
+        {{#if author.image}}
+          <img class="mobile-display avatar lazy" data-original="{{author.image}}" alt="Author image" />
+        {{/if}}
+        {{author}}
+        <time class="publish-time" datetime="{{date published_at timeago="ture"}}">
+          <span class="dot">•</span>{{date published_at timeago="ture"}}
+        </time>
+        <span class="count icon-commend">{{post_star}}</span>
+      </div>
+
+      <p class="post-description desktop-display">
+        {{#if meta_description}}
+          {{post_desc}}
+        {{else}}
+          {{excerpt words="30"}}
+        {{/if}}
+      </p>
+      <!-- <a class="post-readmore" href="#">继续阅读</a> -->
+    </li>
+  {{/foreach}}
+  </ul>
+</div>

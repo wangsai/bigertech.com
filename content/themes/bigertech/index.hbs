@@ -1,0 +1,25 @@
+{{!< default}}
+
+{{> "navbar"}}
+{{index_main data="main"}}
+
+
+<div class="content-wrapper">
+  <div class="container center-block">
+    <!-- <ul class="topics desktop-display">
+      <li class="topic-item-left left">
+        {{index_topic data="topic1"}}
+      </li>
+      <li class="topic-item-right">
+        {{index_topic data="topic2"}}
+      </li>
+    </ul> -->
+
+    {{> "loop"}}
+
+    {{pagination type="page"}}
+
+  </div>
+</div>
+
+{{> "footer"}}

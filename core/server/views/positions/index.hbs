@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Bigertech - 专题管理</title>
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1, minimal-ui">
+
+    <meta http-equiv="cleartype" content="on">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Ghost">
+
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" href="/ghost/img/touch-icon-iphone.png?v=aad122cc47">
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="/ghost/img/touch-icon-ipad.png?v=aad122cc47">
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/ghost/img/small.png?v=aad122cc47">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/ghost/img/medium.png?v=aad122cc47">
+
+    <meta name="application-name" content="Ghost">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-square70x70logo" content="/ghost/img/small.png?v=aad122cc47">
+    <meta name="msapplication-square150x150logo" content="/ghost/img/medium.png?v=aad122cc47">
+    <meta name="msapplication-square310x310logo" content="/ghost/img/large.png?v=aad122cc47">
+
+    <link rel="stylesheet" href="/ghost/css/ghost-ui.min.css?v=aad122cc47">
+</head>
+<body class="settings">
+    <div>
+        <header id="global-header" class="navbar">
+            <button class="ghost-logo ghost-logo-button">
+                <span class="hidden">Ghost</span>
+            </button>
+            <a class="ghost-logo ghost-logo-link" href="/">
+                <span class="hidden">Ghost</span>
+            </a>
+            <nav id="global-nav" role="navigation">
+                <ul id="main-menu">
+                    <li class="content js-close-sidebar"><a href="/ghost/">文章列表</a></li>
+                    <li class="editor js-close-sidebar"><a href="/ghost/editor/">新建文章</a></li>
+                    <li class="settings js-close-sidebar"><a href="/ghost/settings/">设置</a></li>
+                    <li class="js-close-sidebar active"><a class="active" href="/ghost/positions/">专题管理</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main role="main" id="main">
+            <div class="wrapper">
+                <aside class="settings-sidebar" role="complementary">
+                    <header>
+                        <h1 class="title">专题管理</h1>
+                    </header>
+                    <nav class="settings-menu">
+                        <ul>
+                            <li><a href="/ghost/positions/">添加专题</a></li>
+                            {{#each positions}}
+                            <li><a href="/ghost/position/{{id}}">{{name}}</a></li>
+                            {{/each}}
+                        </ul>
+                    </nav>
+                </aside>
+
+                <section class="settings-content fade-in">
+                    <header class="settings-content-header">
+                        <h1>添加专题</h1>
+                        <div class="settings-header-inner">
+                            <a class="button-back button active" href="/ghost/settings/">返回</a>
+                            <section class="page-actions">
+                                <button type="button" class="button-save" id="insert-new-row">新增</button>
+                            </section>
+                        </div>
+                    </header>
+
+                    <section class="content">
+                        <table>
+                            <thead>
+                                <td>专题名称</td>
+                                <td>专题Slug</td>
+                                <td>专题图片</td>
+                                <td>操作</td>
+                            </thead>
+                            <tbody id="rows">
+                            </tbody>
+                        </table>
+                    </section>
+                </section>
+            </div>
+        </main>
+    </div>
+
+<script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+<script>
+$(function() {
+    $.get('/ghost/positionsJson/', function(data) {
+        var positions = data.positions || [];
+
+        var result = '';
+        positions.forEach(function(position) {
+            result += genNewRow(position);
+        });
+
+        $('#rows').append(result);
+    });
+
+    $('#insert-new-row').click(function() {
+        $('#rows').prepend(genNewRow(null, randomString()));
+    });
+
+    $('body').on('click', '.save', function(self) {
+        var random = $(this).attr('value').trim();
+        var remote = $(this).attr('url').trim();
+        var name = $('#name_' + random).val().trim();
+        var id = $('#id_' + random).val().trim();
+        var slug = $('#slug_' + random).val().trim();
+        var img = $('#img_' + random).val().trim();
+
+        if (name == '') {
+            alert('专题名称不能为空');
+            return false;
+        }
+
+        if (slug == '') {
+            alert('专题Slug不能为空');
+            return false;
+        }
+
+        var data = {
+            id: id,
+            name: name,
+            slug: slug,
+            img: img
+        };
+
+        $.post(remote, data, function(result) {
+            if (result.status) {
+                alert('保存成功！');
+                window.location.reload();
+            } else {
+                alert('保存失败！');
+            }
+        });
+    });
+
+    $('body').on('click', '.delete', function() {
+        if (!confirm('确认删除？')) {
+            return false;
+        }
+
+        var random = $(this).attr('value').trim();
+        var id = $('#id_' + random).val().trim();
+        var remote = $(this).attr('url').trim();
+
+        $.get(remote + id, function(result) {
+            if (result.status) {
+                alert('删除成功！');
+                window.location.reload();
+            } else {
+                alert('删除失败！');
+            }
+        });
+    });
+
+    function genNewRow(argPosition, posts) {
+        position = argPosition || {};
+
+        var id = position.id || 0;
+        var name = position.name || '';
+        var slug = position.slug || '';
+        var img  = position.img || '';
+
+        var random = randomString(8);
+
+        var newRow = '<tr>';
+        newRow += '<td><input type="text" value="' + name + '" placeholder="请输入专题名称" id="name_' + random + '" /></td>';
+
+        newRow += '<td><input type="text" value="' + slug + '" placeholder="请输入专题Slug" id="slug_' + random + '" /></td>';
+
+        newRow += '<td><input type="text" value="' + img + '" placeholder="请输入专题图片" id="img_' + random + '" /></td>';
+
+        if (argPosition === null) {
+            newRow += '<td><a href="#" url="/ghost/positions/add/" value="' + random + '" class="save">Save</a></td>';
+        } else {
+            newRow += '<td><a href="#" url="/ghost/positions/update/" value="' + random + '" class="save">Save</a> | <a href="#" url="/ghost/positions/delete/" value="' + random + '" class="delete">Delete</a></td>';
+        }
+
+        newRow += '<td><input type="hidden" value="' + id + '" id="id_' + random + '"/></td>'
+
+        return newRow + '</tr>';
+    }
+
+    var alpha_num_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'.split('');
+    function randomString(length) {
+        if (! length) {
+            length = Math.floor(Math.random() * alpha_num_chars.length);
+        }
+        var str = '';
+        for (var i = 0; i < length; i++) {
+            str += alpha_num_chars[Math.floor(Math.random() * alpha_num_chars.length)];
+        }
+        return str;
+    }
+});
+</script>
+
+</body>
+</html>
