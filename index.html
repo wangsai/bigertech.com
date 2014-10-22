@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Bigertech.com by bigertech</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Bigertech.com</h1>
+        <h2>笔戈博客</h2>
+        <a href="https://github.com/bigertech/bigertech.com" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h4>
+<a name="quickstart" class="anchor" href="#quickstart"><span class="octicon octicon-link"></span></a>Quickstart:</h4>
+
+<pre><code>database: {
+            client: 'mysql',
+            connection: {
+                host     : '127.0.0.1',
+                user     : 'root',
+                password : 'root',
+                database : 'bigertech_blog',
+                charset  : 'UTF8_GENERAL_CI'
+            }
+        },
+
+</code></pre>
+
+<p>在控制台，切换到工作目录，执行以下命令</p>
+
+<ol>
+<li><code>npm install -g grunt-cli</code></li>
+<li><code>npm install</code></li>
+<li>
+<code>grunt init</code> (and <code>grunt prod</code> if you want to run Ghost in production mode)</li>
+<li><code>npm start</code></li>
+</ol>
+
+<h3>
+<a name="production" class="anchor" href="#production"><span class="octicon octicon-link"></span></a>Production</h3>
+
+<p>在<code>config.example.js</code>中，新增了<code>cdn</code>配置，配置项如下：</p>
+
+<div class="highlight highlight-Javascript"><pre><span class="nx">isProduction</span><span class="o">:</span> <span class="err">配置是否线上环境（</span><span class="nx">NODE_ENV</span><span class="o">=</span><span class="nx">production</span><span class="err">，待改进）</span>
+
+<span class="nx">staticAssetsUrl</span><span class="o">:</span> <span class="err">静态资源</span><span class="nx">CDN</span><span class="p">,</span> <span class="err">如</span><span class="nx">css</span><span class="p">,</span> <span class="nx">js</span><span class="err">等</span>
+
+<span class="nx">dynamicAssetsUrl</span><span class="o">:</span> <span class="err">动态资源</span><span class="p">,</span> <span class="err">如用户上传的图片等</span>
+
+<span class="nx">syncImagesPath</span><span class="o">:</span> <span class="err">同步文件到</span><span class="nx">CDN</span><span class="err">服务器上的路径</span>
+</pre></div>
+
+<h3>
+<a name="images-cutting" class="anchor" href="#images-cutting"><span class="octicon octicon-link"></span></a>Images cutting</h3>
+
+<p><code>config.example.js</code>中的<code>images</code>选项可以配置后台上传图片是否进行裁剪，以及裁剪的大小尺寸等，可配置项如下：</p>
+
+<pre><code>dir: 裁剪的图片存放路径，比如 300x200，那么生成的裁剪图片将会在 config.paths.imagesPath/300x200/ 下存放。
+
+cutWidth: 裁剪的宽度
+
+cutHeight: 裁剪的高度
+</code></pre>
+
+<p>以上三项任意一项留空都不会对图片进行裁剪处理。</p>
+
+<h2>
+<a name="%E5%90%8E%E5%8F%B0%E6%8F%92%E5%85%A5%E6%96%87%E7%AB%A0%E7%B1%BB%E5%88%AB%E5%92%8C%E6%A8%A1%E6%9D%BF%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB" class="anchor" href="#%E5%90%8E%E5%8F%B0%E6%8F%92%E5%85%A5%E6%96%87%E7%AB%A0%E7%B1%BB%E5%88%AB%E5%92%8C%E6%A8%A1%E6%9D%BF%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="octicon octicon-link"></span></a>后台插入文章类别和模板对应关系</h2>
+
+<p>编辑文章界面可以选择文章的类型，如果是视频 则需要在 tag 中的第一个位置插入，优酷的视频ID</p>
+
+<table>
+<thead>
+<tr>
+<th>文章类型</th>
+<th>前端模板</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文字博客</td>
+<td>post-article.hbs</td>
+</tr>
+<tr>
+<td>评测视频</td>
+<td>post-video.hbs</td>
+</tr>
+<tr>
+<td>活动宣传</td>
+<td>post-active.hbs</td>
+</tr>
+<tr>
+<td>专题</td>
+<td>post-topic.hbs</td>
+</tr>
+</tbody>
+</table>
+
+<h2>
+<a name="%E6%8E%A5%E5%8F%A3%E9%83%A8%E5%88%86" class="anchor" href="#%E6%8E%A5%E5%8F%A3%E9%83%A8%E5%88%86"><span class="octicon octicon-link"></span></a>接口部分</h2>
+
+<p>接口一律使用<code>Promise</code>支持。</p>
+
+<h3>
+<a name="%E4%B8%93%E9%A2%98%E6%8E%A5%E5%8F%A3---positions" class="anchor" href="#%E4%B8%93%E9%A2%98%E6%8E%A5%E5%8F%A3---positions"><span class="octicon octicon-link"></span></a>专题接口 - Positions</h3>
+
+<pre><code>
+// 得到指定ID专题下的所有文章
+getPostsByPositionId(postId);
+
+// eg:
+getPostsByPositionId(1).then(function(posts) {
+    if (posts === null) {
+        console.log('ID对应的专题不存在！');
+        return when.reject(new NotFoundError());
+    }
+
+    posts.forEach(function(post) {
+        // ... some code
+    });
+});
+
+// 得到指定Slug专题下的所有文章
+getPostsByPositionId(slug);
+
+// eg:
+getPostsByPositionSlug('news').then(function(posts) {
+    if (posts === null) {
+        console.log('Sulg对应的专题不存在！');
+        return when.reject(new NotFoundError());
+    }
+
+    posts.forEach(function(post) {
+        // ... some code
+    });
+});
+
+// 得到指定Name专题下的所有文章
+getPostsByPositionName(name);
+
+// eg:
+getPostsByPositionName('新闻专题').then(function(posts) {
+    if (posts === null) {
+        console.log('Name对应的专题不存在！');
+        return when.reject(new NotFoundError());
+    }
+
+    posts.forEach(function(post) {
+        // ... some code
+    });
+});
+
+// 得到所有的专题
+findAll(options).then(function(positions) {});
+
+// 得到一个指定的专题
+// { id: id } 或者 { name: 'news' } 等等
+findOne(options).then(function(position) {});
+
+// 更新一个专题信息
+edit(data, options);
+
+// 添加一个专题信息
+add(data, options);
+
+// 删除一个专题信息
+destroy(options);
+</code></pre>
+
+<h2>
+<a name="%E9%95%BF%E5%BE%AE%E5%8D%9A" class="anchor" href="#%E9%95%BF%E5%BE%AE%E5%8D%9A"><span class="octicon octicon-link"></span></a>长微博</h2>
+
+<p>长微博的生成采用的是模拟浏览器截图的原理来生成的，使用的是<code>phantomjs</code>环境。</p>
+
+<h3>
+<a name="phantomjs" class="anchor" href="#phantomjs"><span class="octicon octicon-link"></span></a>phantomjs</h3>
+
+<p>确保当前服务器环境需要安装好<a href="http://phantomjs.org/">phantomjs</a>。</p>
+
+<h3>
+<a name="%E9%95%BF%E5%BE%AE%E5%8D%9A%E6%96%87%E7%AB%A0%E9%A1%B5" class="anchor" href="#%E9%95%BF%E5%BE%AE%E5%8D%9A%E6%96%87%E7%AB%A0%E9%A1%B5"><span class="octicon octicon-link"></span></a>长微博文章页</h3>
+
+<pre><code>changweiboPage/:slug
+</code></pre>
+
+<h3>
+<a name="%E9%95%BF%E5%BE%AE%E5%8D%9A%E9%A2%84%E8%A7%88%E9%A1%B5" class="anchor" href="#%E9%95%BF%E5%BE%AE%E5%8D%9A%E9%A2%84%E8%A7%88%E9%A1%B5"><span class="octicon octicon-link"></span></a>长微博预览页</h3>
+
+<pre><code>changweibo/:slug
+</code></pre>
+
+<h2>
+<a name="%E6%96%B0%E5%A2%9E%E6%94%B9%E5%8A%A8" class="anchor" href="#%E6%96%B0%E5%A2%9E%E6%94%B9%E5%8A%A8"><span class="octicon octicon-link"></span></a>新增改动</h2>
+
+<ul>
+<li> 文章类别选择</li>
+<li> 每篇文章加入 文章图片</li>
+<li> 默认文章url为标题的拼音链接， 修改为数字</li>
+<li> 文章在界面中的位置指定</li>
+<li> 点赞功能</li>
+<li> 多说评论</li>
+<li> 百度统计</li>
+<li> 图片自动裁剪</li>
+<li> 线上环境CDN资源切换</li>
+</ul>
+
+<h2>
+<a name="copyright--license" class="anchor" href="#copyright--license"><span class="octicon octicon-link"></span></a>Copyright &amp; License</h2>
+
+<p>笔戈科技出品</p>
+
+<p>Copyright (c) 2013-2014 Ghost Foundation - Released under the <a href="LICENSE">MIT license</a>.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/bigertech/bigertech.com/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/bigertech/bigertech.com/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/bigertech/bigertech.com"></a> is maintained by <a href="https://github.com/bigertech">bigertech</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
