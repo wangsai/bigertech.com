@@ -1,6 +1,6 @@
 // # Users API
 // RESTful API for the User resource
-var when            = require('when'),
+var Promise            = require('bluebird'),
     _               = require('lodash'),
     dataProvider    = require('../models'),
     settings        = require('./settings'),
@@ -49,7 +49,7 @@ postType = {
                 return { postType: [result.toJSON()] };
             }
 
-            return when.reject(new errors.NotFoundError('postType not found.'));
+            return Promise.reject(new errors.NotFoundError('postType not found.'));
         });
     }
 };
