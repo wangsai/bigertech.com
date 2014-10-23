@@ -1,8 +1,8 @@
 var ModalDialog = Ember.Component.extend({
     didInsertElement: function () {
-        this.$('#modal-container').fadeIn(50);
+        this.$('.js-modal-container').fadeIn(50);
 
-        this.$('.modal-background').show().fadeIn(10, function () {
+        this.$('.js-modal-background').show().fadeIn(10, function () {
             $(this).addClass('in');
         });
 
@@ -13,7 +13,7 @@ var ModalDialog = Ember.Component.extend({
 
         this.$('.js-modal').removeClass('in');
 
-        this.$('.modal-background').removeClass('in');
+        this.$('.js-modal-background').removeClass('in');
 
         return this._super();
     },
@@ -31,7 +31,7 @@ var ModalDialog = Ember.Component.extend({
         }
     },
 
-    klass: function () {
+    klass: Ember.computed('type', 'style', 'animation', function () {
         var classNames = [];
 
         classNames.push(this.get('type') ? 'modal-' + this.get('type') : 'modal');
@@ -45,15 +45,15 @@ var ModalDialog = Ember.Component.extend({
         classNames.push(this.get('animation'));
 
         return classNames.join(' ');
-    }.property('type', 'style', 'animation'),
+    }),
 
-    acceptButtonClass: function () {
-        return this.get('confirm.accept.buttonClass') ? this.get('confirm.accept.buttonClass') : 'button-add';
-    }.property('confirm.accept.buttonClass'),
+    acceptButtonClass: Ember.computed('confirm.accept.buttonClass', function () {
+        return this.get('confirm.accept.buttonClass') ? this.get('confirm.accept.buttonClass') : 'btn btn-green';
+    }),
 
-    rejectButtonClass: function () {
-        return this.get('confirm.reject.buttonClass') ? this.get('confirm.reject.buttonClass') : 'button-delete';
-    }.property('confirm.reject.buttonClass')
+    rejectButtonClass: Ember.computed('confirm.reject.buttonClass', function () {
+        return this.get('confirm.reject.buttonClass') ? this.get('confirm.reject.buttonClass') : 'btn btn-red';
+    })
 });
 
 export default ModalDialog;

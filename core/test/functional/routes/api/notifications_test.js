@@ -2,26 +2,19 @@
 /*jshint expr:true*/
 var testUtils     = require('../../../utils'),
     supertest     = require('supertest'),
-    express       = require('express'),
-    should        = require('should'),
 
     ghost         = require('../../../../../core'),
 
-    httpServer,
     request;
 
 describe('Notifications API', function () {
     var accesstoken = '';
 
     before(function (done) {
-        var app = express();
-
         // starting ghost automatically populates the db
         // TODO: prevent db init, and manage bringing up the DB with fixtures ourselves
-        ghost({app: app}).then(function (_httpServer) {
-            httpServer = _httpServer;
-            request = supertest.agent(app);
-
+        ghost().then(function (ghostServer) {
+            request = supertest.agent(ghostServer.rootApp);
         }).then(function () {
             return testUtils.doAuth(request);
         }).then(function (token) {
@@ -33,8 +26,10 @@ describe('Notifications API', function () {
         });
     });
 
-    after(function () {
-        httpServer.close();
+    after(function (done) {
+        testUtils.clearData().then(function () {
+            done();
+        }).catch(done);
     });
 
     describe('Add', function () {
@@ -46,8 +41,9 @@ describe('Notifications API', function () {
         it('creates a new notification', function (done) {
             request.post(testUtils.API.getApiQuery('notifications/'))
                 .set('Authorization', 'Bearer ' + accesstoken)
-                .send({ notifications: [newNotification] })
+                .send({notifications: [newNotification]})
                 .expect('Content-Type', /json/)
+                .expect('Cache-Control', testUtils.cacheRules['private'])
                 .expect(201)
                 .end(function (err, res) {
                     if (err) {
@@ -80,17 +76,17 @@ describe('Notifications API', function () {
             // create the notification that is to be deleted
             request.post(testUtils.API.getApiQuery('notifications/'))
                 .set('Authorization', 'Bearer ' + accesstoken)
-                .send({ notifications: [newNotification] })
+                .send({notifications: [newNotification]})
                 .expect('Content-Type', /json/)
+                .expect('Cache-Control', testUtils.cacheRules['private'])
                 .expect(201)
                 .end(function (err, res) {
                     if (err) {
                         return done(err);
                     }
 
-                    var location = res.headers['location'];
-
-                    var jsonResponse = res.body;
+                    var location = res.headers.location,
+                        jsonResponse = res.body;
 
                     jsonResponse.notifications.should.exist;
                     testUtils.API.checkResponse(jsonResponse.notifications[0], 'notification');

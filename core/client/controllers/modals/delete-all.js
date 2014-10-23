@@ -6,7 +6,7 @@ var DeleteAllController = Ember.Controller.extend({
             ic.ajax.request(this.get('ghostPaths.url').api('db'), {
                 type: 'DELETE'
             }).then(function () {
-                self.notifications.showSuccess('所有内容都已经从数据库中删除了。');
+                self.notifications.showSuccess('All content deleted from database.');
             }).catch(function (response) {
                 self.notifications.showErrors(response);
             });
@@ -19,12 +19,12 @@ var DeleteAllController = Ember.Controller.extend({
 
     confirm: {
         accept: {
-            text: '删除',
-            buttonClass: 'button-delete'
+            text: 'Delete',
+            buttonClass: 'btn btn-red'
         },
         reject: {
-            text: '取消',
-            buttonClass: 'button'
+            text: 'Cancel',
+            buttonClass: 'btn btn-default btn-minor'
         }
     }
 });

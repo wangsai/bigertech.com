@@ -1,24 +1,15 @@
 var templates     = {},
     hbs           = require('express-hbs'),
-    api           = require('../api'),
     errors        = require('../errors'),
-    _             = require('lodash'),
-    typeLinks = [];
-
+    api           = require('../api'),
+    typeLinks     = require('../utils/bigertech').typeLinks;
 //初始化所有的 文章类型 和对应的url
-api.postType.browse().then(function(result){
-    if(result.postTypes){
-        _.forEach(result.postTypes,function(item){
-            typeLinks.push(item.slug);
-        });
-    }
-});
+
 // ## Template utils
 
 // Execute a template helper
 // All template helpers are register as partial view.
 templates.execute = function (name, context) {
-
     var partial = hbs.handlebars.partials[name];
 
     if (partial === undefined) {
@@ -44,15 +35,38 @@ templates.execute = function (name, context) {
 templates.getThemeViewForPost = function (themePaths, post) {
     var customPageView = 'page-' + post.slug,
         view = 'post';
+
     if (post.page) {
         if (themePaths.hasOwnProperty(customPageView + '.hbs')) {
             view = customPageView;
         } else if (themePaths.hasOwnProperty('page.hbs')) {
             view = 'page';
         }
-    }else if(post.post_type > -1){
+    }else if(parseInt(post.post_type) > -1){
         return 'post-' + typeLinks[post.post_type];
     }
+
+    return view;
+};
+
+// Given a theme object and a tag slug this will return
+// which theme template page should be used.
+// If no default or custom tag template exists then 'index'
+// will be returned
+// If no custom tag template exists but a default does then
+// 'tag' will be returned
+// If given a tag slug and a custom tag template
+// exits it will return that view.
+templates.getThemeViewForTag = function (themePaths, tag) {
+    var customTagView = 'tag-' + tag,
+        view = 'tag';
+
+    if (themePaths.hasOwnProperty(customTagView + '.hbs')) {
+        view = customTagView;
+    } else if (!themePaths.hasOwnProperty('tag.hbs')) {
+        view = 'index';
+    }
+
     return view;
 };
 

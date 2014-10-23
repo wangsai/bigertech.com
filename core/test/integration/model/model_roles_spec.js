@@ -4,7 +4,7 @@ var testUtils   = require('../../utils'),
     should      = require('should'),
 
     // Stuff we are testing
-    RoleModel   = require('../../../server/models').Role,
+    RoleModel   = require('../../../server/models/role').Role,
     context     = testUtils.context.admin;
 
 describe('Role Model', function () {
@@ -14,7 +14,9 @@ describe('Role Model', function () {
 
     beforeEach(testUtils.setup('role'));
 
-    should.exist(RoleModel);
+    before(function () {
+        should.exist(RoleModel);
+    });
 
     it('can findAll', function (done) {
         RoleModel.findAll().then(function (foundRoles) {
@@ -77,7 +79,7 @@ describe('Role Model', function () {
             return RoleModel.destroy(firstRole);
         }).then(function (response) {
             response.toJSON().should.be.empty;
-            return  RoleModel.findOne(firstRole);
+            return RoleModel.findOne(firstRole);
         }).then(function (newResults) {
             should.equal(newResults, null);
 

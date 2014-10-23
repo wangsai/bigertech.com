@@ -1,15 +1,14 @@
 // # Posts API
 // RESTful API for the Post resource
-var when            = require('when'),
+var Promise         = require('bluebird'),
     _               = require('lodash'),
     dataProvider    = require('../models'),
     canThis         = require('../permissions').canThis,
     errors          = require('../errors'),
     utils           = require('./utils'),
-    _               = require('lodash'),
 
     docName         = 'posts',
-    allowedIncludes = ['created_by', 'updated_by', 'published_by', 'author', 'tags', 'fields','post_type'],
+    allowedIncludes = ['created_by', 'updated_by', 'published_by', 'author', 'tags', 'fields'],
     posts;
 
 // ## Helpers
@@ -32,35 +31,23 @@ function prepareInclude(include) {
  * **See:** [API Methods](index.js.html#api%20methods)
  */
 posts = {
-
+    //add by liuxing
     findByIn: function findByIn(ids) {
         if (_.isEmpty(ids) || !_.isArray(ids)) {
-            return when.resolve([]);
+            return Promise.resolve([]);
         }
-
-        var posts = null;
-        return dataProvider.Post.query(function(qb) {
+        return dataProvider.Posts.query(function(qb) {
             qb.where({status: 'published'}).where('id', 'IN', ids);
-        }).fetchAll().then(function(result) {
-            posts = result.toJSON();
-
-            return dataProvider.User.findAll();
-        }).then(function(authors) {
-            authors = authors.toJSON();
-            posts.forEach(function(post, key) {
-                authors.forEach(function(author) {
-                    if (author.id == post.author) {
-                        posts[key].author = _.pick(author,
-                            'id', 'uuid', 'slug','name','email', 'image'
-                        );
-                    }
-                });
+        }).fetch({
+            withRelated: ['author_id']
+        }).then(function(result) {
+            _.each(result.models, function (item) {
+                item.include = ['author_id'];
             });
-
-            return when.resolve(posts);
-        });
+            return Promise.resolve(result.toJSON());
+        })
     },
-
+    //end add
     /**
      * ### Browse
      * Find a paginated set of posts
@@ -93,10 +80,6 @@ posts = {
         return dataProvider.Post.findPage(options);
     },
 
-    findAll: function(options) {
-        return dataProvider.Post.fetchAll(options);
-    },
-
     /**
      * ### Read
      * Find a post, by ID or Slug
@@ -124,8 +107,7 @@ posts = {
                 return { posts: [ result.toJSON() ]};
             }
 
-            return when.reject(new errors.NotFoundError('Post not found.'));
-
+            return Promise.reject(new errors.NotFoundError('Post not found.'));
         });
     },
     //add by liuxing
@@ -227,13 +209,13 @@ posts = {
                     if (result.updated('status') !== result.get('status')) {
                         post.statusChanged = true;
                     }
-                    return { posts: [ post ]};
+                    return {posts: [post]};
                 }
 
-                return when.reject(new errors.NotFoundError('Post not found.'));
+                return Promise.reject(new errors.NotFoundError('Post not found.'));
             });
         }, function () {
-            return when.reject(new errors.NoPermissionError('You do not have permission to edit this post.'));
+            return Promise.reject(new errors.NoPermissionError('You do not have permission to edit posts.'));
         });
     },
 
@@ -263,13 +245,12 @@ posts = {
                     // When creating a new post that is published right now, signal the change
                     post.statusChanged = true;
                 }
-                return { posts: [ post ]};
+                return {posts: [post]};
             });
         }, function () {
-            return when.reject(new errors.NoPermissionError('You do not have permission to add posts.'));
+            return Promise.reject(new errors.NoPermissionError('You do not have permission to add posts.'));
         });
     },
-
 
     /**
      * ### Destroy
@@ -296,7 +277,7 @@ posts = {
                 });
             });
         }, function () {
-            return when.reject(new errors.NoPermissionError('You do not have permission to remove posts.'));
+            return Promise.reject(new errors.NoPermissionError('You do not have permission to remove posts.'));
         });
     }
 

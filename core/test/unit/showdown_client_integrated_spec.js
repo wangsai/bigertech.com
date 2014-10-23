@@ -29,6 +29,14 @@ describe('Showdown client side converter', function () {
         processedMarkup.should.match(testPhrase.output);
     });
 
+    it('should honour escaped tildes', function () {
+        var testPhrase = {input: '\\~\\~foo_bar\\~\\~', output: /^<p>~~foo_bar~~<\/p>$/},
+            processedMarkup = converter.makeHtml(testPhrase.input);
+
+        // The image is the entire markup, so the image box should be too
+        processedMarkup.should.match(testPhrase.output);
+    });
+
     it('should not touch single underscores inside words', function () {
         var testPhrase = {input: 'foo_bar', output: /^<p>foo_bar<\/p>$/},
             processedMarkup = converter.makeHtml(testPhrase.input);
@@ -190,39 +198,39 @@ describe('Showdown client side converter', function () {
         var testPhrases = [
             {
                 input: 'http://google.co.uk',
-                output: /^<p><a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/p>$/
+                output: /^<p><a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/p>$/
             },
             {
                 input: 'https://atest.com/fizz/buzz?baz=fizzbuzz',
-                output: /^<p><a href=\'https:\/\/atest.com\/fizz\/buzz\?baz=fizzbuzz\'>https:\/\/atest.com\/fizz\/buzz\?baz=fizzbuzz<\/a><\/p>$/
+                output: /^<p><a href="https:\/\/atest.com\/fizz\/buzz\?baz=fizzbuzz">https:\/\/atest.com\/fizz\/buzz\?baz=fizzbuzz<\/a><\/p>$/
             },
             {
                 input: 'Some [ text (http://www.google.co.uk) some other text',
-                output: /^<p>Some \[ text \(<a href=\'http:\/\/www.google.co.uk\'>http:\/\/www.google.co.uk<\/a>\) some other text<\/p>$/
+                output: /^<p>Some \[ text \(<a href="http:\/\/www.google.co.uk">http:\/\/www.google.co.uk<\/a>\) some other text<\/p>$/
             },
             {
                 input: '>http://google.co.uk',
-                output: /^<blockquote>\n  <p><a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/p>\n<\/blockquote>$/
+                output: /^<blockquote>\n  <p><a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/p>\n<\/blockquote>$/
             },
             {
                 input: '> http://google.co.uk',
-                output: /^<blockquote>\n  <p><a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/p>\n<\/blockquote>$/
+                output: /^<blockquote>\n  <p><a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/p>\n<\/blockquote>$/
             },
             {
                 input: '<>>> http://google.co.uk',
-                output: /^<p>&lt;>>> <a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/p>$/
+                output: /^<p>&lt;>>> <a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/p>$/
             },
             {
                 input: '<strong>http://google.co.uk',
-                output: /^<p><strong><a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/p>$/
+                output: /^<p><strong><a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/p>$/
             },
             {
                 input: '# http://google.co.uk',
-                output: /^<h1 id="httpgooglecouk"><a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/h1>$/
+                output: /^<h1 id="httpgooglecouk"><a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/h1>$/
             },
             {
                 input: '* http://google.co.uk',
-                output: /^<ul>\n<li><a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/li>\n<\/ul>$/
+                output: /^<ul>\n<li><a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/li>\n<\/ul>$/
             }
         ],
         processedMarkup;
@@ -301,7 +309,7 @@ describe('Showdown client side converter', function () {
             },
             {
                 input: '<a href="http://facebook.com">test</a> http://google.co.uk',
-                output: /^<p><a href=\"http:\/\/facebook.com\">test<\/a> <a href=\'http:\/\/google.co.uk\'>http:\/\/google.co.uk<\/a><\/p>$/
+                output: /^<p><a href=\"http:\/\/facebook.com\">test<\/a> <a href="http:\/\/google.co.uk">http:\/\/google.co.uk<\/a><\/p>$/
             }
         ],
         processedMarkup;
@@ -467,11 +475,11 @@ describe('Showdown client side converter', function () {
             },
             {
                 input: '![http://google.co.uk/kitten.jpg](http://google.co.uk/kitten.jpg)',
-                output: /^<section.*?((?!<a href=\'http:\/\/google.co.uk\/kitten.jpg\').)*<\/section>$/
+                output: /^<section.*?((?!<a href="http:\/\/google.co.uk\/kitten.jpg").)*<\/section>$/
             },
             {
                 input: '![image stuff](http://dsurl.stuff/something)',
-                output: /^<section.*?((?!<a href=\'http:\/\/dsurl.stuff\/something\').)*<\/section>$/
+                output: /^<section.*?((?!<a href="http:\/\/dsurl.stuff\/something").)*<\/section>$/
             }
         ],
         processedMarkup;
@@ -494,7 +502,7 @@ describe('Showdown client side converter', function () {
             },
             {   // audio isn't counted as a block tag by showdown so gets wrapped in <p></p>
                 input: '<audio class=\"podcastplayer\" controls>\n    <source src=\"foobar.mp3\" type=\"audio/mp3\" preload=\"none\"></source>\n    <source src=\"foobar.off\" type=\"audio/ogg\" preload=\"none\"></source>\n</audio>',
-                output: /^<audio class=\"podcastplayer\" controls>  \n    <source src=\"foobar.mp3\" type=\"audio\/mp3\" preload=\"none\"><\/source>\n    <source src=\"foobar.off\" type=\"audio\/ogg\" preload=\"none\"><\/source>\n<\/audio>$/,
+                output: /^<audio class=\"podcastplayer\" controls>  \n    <source src=\"foobar.mp3\" type=\"audio\/mp3\" preload=\"none\"><\/source>\n    <source src=\"foobar.off\" type=\"audio\/ogg\" preload=\"none\"><\/source>\n<\/audio>$/
             }
         ];
 
@@ -503,7 +511,6 @@ describe('Showdown client side converter', function () {
             processedMarkup.should.match(testPhrase.output);
         });
     });
-
 
     //      Waiting for showdown typography to be updated
     //    it('should correctly convert quotes to curly quotes', function () {

@@ -13,12 +13,12 @@ var UploadModal = ModalDialog.extend({
             func: function () { // The function called on rejection
                 return true;
             },
-            buttonClass: true,
-            text: '取消' // The reject button text
+            buttonClass: 'btn btn-default',
+            text: 'Cancel' // The reject button text
         },
         accept: {
-            buttonClass: 'button-save right',
-            text: '保存', // The accept button texttext: 'Save'
+            buttonClass: 'btn btn-blue right',
+            text: 'Save', // The accept button texttext: 'Save'
             func: function () {
                 var imageType = 'model.' + this.get('imageType');
 

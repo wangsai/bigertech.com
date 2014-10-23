@@ -1,23 +1,26 @@
-/*globals describe, before, beforeEach, afterEach, after, it*/
+/*globals describe, before, beforeEach, afterEach, it*/
 /*jshint expr:true*/
 var testUtils       = require('../utils'),
     should          = require('should'),
     sinon           = require('sinon'),
-    when            = require('when'),
+    Promise         = require('bluebird'),
     _               = require('lodash'),
 
     // Stuff we are testing
-    ModelPermission    = require('../../server/models').Permission,
-    ModelPermissions    = require('../../server/models').Permissions,
-    permissions         = require('../../server/permissions'),
-    effectivePerms      = require('../../server/permissions/effective'),
-    context = testUtils.context.owner,
+    Models          = require('../../server/models'),
+    permissions     = require('../../server/permissions'),
+//    effectivePerms  = require('../../server/permissions/effective'),
+//    context         = testUtils.context.owner,
 
-    sandbox = sinon.sandbox.create();
+    sandbox         = sinon.sandbox.create();
 
 // TODO move to integrations or stub
 
 describe('Permissions', function () {
+    before(function (done) {
+        Models.init().then(done).catch(done);
+    });
+
     afterEach(function () {
         sandbox.restore();
     });
@@ -27,12 +30,10 @@ describe('Permissions', function () {
             return testUtils.DataGenerator.forKnex.createPermission(testPerm);
         });
 
-        sandbox.stub(ModelPermission, 'findAll', function () {
-            return when(ModelPermissions.forge(permissions));
+        sandbox.stub(Models.Permission, 'findAll', function () {
+            return Promise.resolve(Models.Permissions.forge(permissions));
         });
-
     });
-
 
     it('can load an actions map from existing permissions', function (done) {
         permissions.init().then(function (actionsMap) {
@@ -45,9 +46,6 @@ describe('Permissions', function () {
             done();
         }).catch(done);
     });
-
-
-
 
 //    it('does not allow edit post without permission', function (done) {
 //        var fakePage = {
@@ -67,7 +65,7 @@ describe('Permissions', function () {
 //                done(new Error('was able to edit post without permission'));
 //            }).catch(done);
 //    });
-//////
+// ////
 //    it('allows edit post with permission', function (done) {
 //        var fakePost = {
 //            id: '1'
@@ -109,7 +107,7 @@ describe('Permissions', function () {
 //    it('can use permissible function on Model to allow something', function (done) {
 //        var testUser,
 //            permissibleStub = sandbox.stub(Models.Post, 'permissible', function () {
-//                return when.resolve();
+//                return Promise.resolve();
 //            });
 //
 //        testUtils.insertAuthorUser()
@@ -138,7 +136,7 @@ describe('Permissions', function () {
 //    it('can use permissible function on Model to forbid something', function (done) {
 //        var testUser,
 //            permissibleStub = sandbox.stub(Models.Post, 'permissible', function () {
-//                return when.reject();
+//                return Promise.reject();
 //            });
 //
 //        testUtils.insertAuthorUser()
@@ -200,7 +198,7 @@ describe('Permissions', function () {
 //
 //                        return newPerm.save(null, context).then(function () {
 //                            return foundUser.permissions().attach(newPerm).then(function () {
-//                                return when.all([updatedPost, foundUser]);
+//                                return Promise.all([updatedPost, foundUser]);
 //                            });
 //                        });
 //                    });

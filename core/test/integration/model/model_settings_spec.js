@@ -4,7 +4,7 @@ var testUtils       = require('../../utils'),
     should          = require('should'),
 
     // Stuff we are testing
-    SettingsModel   = require('../../../server/models').Settings,
+    SettingsModel   = require('../../../server/models/settings').Settings,
     config          = require('../../../server/config'),
     context         = testUtils.context.admin;
 
@@ -14,13 +14,13 @@ describe('Settings Model', function () {
     afterEach(testUtils.teardown);
     beforeEach(testUtils.setup('settings'));
 
-    should.exist(SettingsModel);
+    before(function () {
+        should.exist(SettingsModel);
+    });
 
     describe('API', function () {
-
         it('can findAll', function (done) {
             SettingsModel.findAll().then(function (results) {
-
                 should.exist(results);
 
                 results.length.should.be.above(0);
@@ -33,7 +33,6 @@ describe('Settings Model', function () {
             var firstSetting;
 
             SettingsModel.findAll().then(function (results) {
-
                 should.exist(results);
 
                 results.length.should.be.above(0);
@@ -41,31 +40,24 @@ describe('Settings Model', function () {
                 firstSetting = results.models[0];
 
                 return SettingsModel.findOne(firstSetting.attributes.key);
-
             }).then(function (found) {
-
                 should.exist(found);
 
                 found.get('value').should.equal(firstSetting.attributes.value);
                 found.get('created_at').should.be.an.instanceof(Date);
 
                 done();
-
             }).catch(done);
         });
 
         it('can edit single', function (done) {
-
             SettingsModel.findAll().then(function (results) {
-
                 should.exist(results);
 
                 results.length.should.be.above(0);
 
                 return SettingsModel.edit({key: 'description', value: 'new value'}, context);
-
             }).then(function (edited) {
-
                 should.exist(edited);
 
                 edited.length.should.equal(1);
@@ -76,7 +68,6 @@ describe('Settings Model', function () {
                 edited.attributes.value.should.equal('new value');
 
                 done();
-
             }).catch(done);
         });
 
@@ -86,7 +77,6 @@ describe('Settings Model', function () {
                 editedModel;
 
             SettingsModel.findAll().then(function (results) {
-
                 should.exist(results);
 
                 results.length.should.be.above(0);
@@ -95,9 +85,7 @@ describe('Settings Model', function () {
                 model2 = {key: 'title', value: 'new title'};
 
                 return SettingsModel.edit([model1, model2], context);
-
             }).then(function (edited) {
-
                 should.exist(edited);
 
                 edited.length.should.equal(2);
@@ -113,7 +101,6 @@ describe('Settings Model', function () {
                 editedModel.attributes.value.should.equal(model2.value);
 
                 done();
-
             }).catch(done);
         });
 
@@ -124,7 +111,6 @@ describe('Settings Model', function () {
             };
 
             SettingsModel.add(newSetting, context).then(function (createdSetting) {
-
                 should.exist(createdSetting);
                 createdSetting.has('uuid').should.equal(true);
                 createdSetting.attributes.key.should.equal(newSetting.key, 'key is correct');
@@ -157,7 +143,6 @@ describe('Settings Model', function () {
     });
 
     describe('populating defaults from settings.json', function () {
-
         beforeEach(function (done) {
             config.database.knex('settings').truncate().then(function () {
                 done();

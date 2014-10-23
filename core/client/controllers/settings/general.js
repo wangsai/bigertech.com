@@ -1,5 +1,5 @@
 var SettingsGeneralController = Ember.ObjectController.extend({
-    isDatedPermalinks: function (key, value) {
+    isDatedPermalinks: Ember.computed('permalinks', function (key, value) {
         // setter
         if (arguments.length > 1) {
             this.set('permalinks', value ? '/:year/:month/:day/:slug/' : '/:slug/');
@@ -9,9 +9,9 @@ var SettingsGeneralController = Ember.ObjectController.extend({
         var slugForm = this.get('permalinks');
 
         return slugForm !== '/:slug/';
-    }.property('permalinks'),
+    }),
 
-    themes: function () {
+    themes: Ember.computed(function () {
         return this.get('availableThemes').reduce(function (themes, t) {
             var theme = {};
 
@@ -24,20 +24,26 @@ var SettingsGeneralController = Ember.ObjectController.extend({
 
             return themes;
         }, []);
-    }.property().readOnly(),
+    }).readOnly(),
 
     actions: {
         save: function () {
             var self = this;
 
             return this.get('model').save().then(function (model) {
-                self.notifications.showSuccess('已成功保存配置信息。');
+                self.notifications.showSuccess('Settings successfully saved.');
 
                 return model;
             }).catch(function (errors) {
                 self.notifications.showErrors(errors);
             });
         },
+
+        checkPostsPerPage: function () {
+            if (this.get('postsPerPage') < 1 || this.get('postsPerPage') > 1000 || isNaN(this.get('postsPerPage'))) {
+                this.set('postsPerPage', 5);
+            }
+        }
     }
 });
 

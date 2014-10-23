@@ -2,17 +2,16 @@
 /*jshint expr:true*/
 var testUtils   = require('../../utils'),
     should      = require('should'),
-    when        = require('when'),
+    Promise     = require('bluebird'),
     sinon       = require('sinon'),
     uuid        = require('node-uuid'),
     _           = require('lodash'),
 
     // Stuff we are testing
-    UserModel   = require('../../../server/models').User,
-    RoleModel   = require('../../../server/models').Role,
+    UserModel   = require('../../../server/models/user').User,
+    RoleModel   = require('../../../server/models/role').Role,
     context     = testUtils.context.admin,
     sandbox     = sinon.sandbox.create();
-
 
 describe('User Model', function run() {
     // Keep the DB clean
@@ -22,7 +21,9 @@ describe('User Model', function run() {
         sandbox.restore();
     });
 
-    should.exist(UserModel);
+    before(function () {
+        should.exist(UserModel);
+    });
 
     describe('Registration', function runRegistration() {
         beforeEach(testUtils.setup('roles'));
@@ -31,7 +32,7 @@ describe('User Model', function run() {
             var userData = testUtils.DataGenerator.forModel.users[0];
 
             sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
-                return when.resolve(userData);
+                return Promise.resolve(userData);
             });
 
             UserModel.add(userData, context).then(function (createdUser) {
@@ -44,11 +45,55 @@ describe('User Model', function run() {
             }).catch(done);
         });
 
+        it('shortens slug if possible', function (done) {
+            var userData = testUtils.DataGenerator.forModel.users[2];
+
+            sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
+                return Promise.resolve(userData);
+            });
+
+            UserModel.add(userData, context).then(function (createdUser) {
+                should.exist(createdUser);
+                createdUser.has('slug').should.equal(true);
+                createdUser.attributes.slug.should.equal('jimothy');
+                done();
+            }).catch(done);
+        });
+
+        it('does not short slug if not possible', function (done) {
+            var userData = testUtils.DataGenerator.forModel.users[2];
+
+            sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
+                return Promise.resolve(userData);
+            });
+
+            UserModel.add(userData, context).then(function (createdUser) {
+                should.exist(createdUser);
+                createdUser.has('slug').should.equal(true);
+                createdUser.attributes.slug.should.equal('jimothy');
+            }).then(function () {
+                userData.email = 'newmail@mail.com';
+                UserModel.add(userData, context).then(function (createdUser) {
+                    should.exist(createdUser);
+                    createdUser.has('slug').should.equal(true);
+                    createdUser.attributes.slug.should.equal('jimothy-bogendath');
+                }).then(function () {
+                    userData.email = 'newmail2@mail.com';
+                    UserModel.add(userData, context).then(function (createdUser) {
+                        should.exist(createdUser);
+                        createdUser.has('slug').should.equal(true);
+                        createdUser.attributes.slug.should.equal('jimothy-bogendath-2');
+                        done();
+                    });
+                });
+            }).catch(done);
+        });
+
         it('does NOT lowercase email', function (done) {
             var userData = testUtils.DataGenerator.forModel.users[2];
 
             sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
-                return when.resolve(userData);
+                return Promise.resolve(userData);
             });
 
             UserModel.add(userData, context).then(function (createdUser) {
@@ -64,7 +109,7 @@ describe('User Model', function run() {
 
             sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
                 userData.image = 'http://www.gravatar.com/avatar/2fab21a4c4ed88e76add10650c73bae1?d=404';
-                return when.resolve(userData);
+                return Promise.resolve(userData);
             });
 
             UserModel.add(userData, context).then(function (createdUser) {
@@ -81,7 +126,7 @@ describe('User Model', function run() {
             var userData = testUtils.DataGenerator.forModel.users[0];
 
             sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
-                return when.resolve(userData);
+                return Promise.resolve(userData);
             });
 
             UserModel.add(userData, context).then(function (createdUser) {
@@ -141,22 +186,22 @@ describe('User Model', function run() {
         it('converts fetched dateTime fields to Date objects', function (done) {
             var userData = testUtils.DataGenerator.forModel.users[0];
 
-            UserModel.check({ email: userData.email, password: userData.password }).then(function (user) {
-                return UserModel.findOne({ id: user.id });
+            UserModel.check({email: userData.email, password: userData.password}).then(function (user) {
+                return UserModel.findOne({id: user.id});
             }).then(function (user) {
-                var last_login,
-                    created_at,
-                    updated_at;
+                var lastLogin,
+                    createdAt,
+                    updatedAt;
 
                 should.exist(user);
 
-                last_login = user.get('last_login');
-                created_at = user.get('created_at');
-                updated_at = user.get('updated_at');
+                lastLogin = user.get('last_login');
+                createdAt = user.get('created_at');
+                updatedAt = user.get('updated_at');
 
-                last_login.should.be.an.instanceof(Date);
-                created_at.should.be.an.instanceof(Date);
-                updated_at.should.be.an.instanceof(Date);
+                lastLogin.should.be.an.instanceof(Date);
+                createdAt.should.be.an.instanceof(Date);
+                updatedAt.should.be.an.instanceof(Date);
 
                 done();
             }).catch(done);
@@ -168,7 +213,6 @@ describe('User Model', function run() {
                 results.length.should.equal(4);
 
                 done();
-
             }).catch(done);
         });
 
@@ -216,12 +260,12 @@ describe('User Model', function run() {
         });
 
         it('can NOT findPage for a page that overflows the datatype', function (done) {
-            UserModel.findPage({ page: 5700000000055345439587894375457849375284932759842375894372589243758947325894375894275894275894725897432859724309 })
+            UserModel.findPage({page: 5700000000055345439587894375457849375284932759842375894372589243758947325894375894275894275894725897432859724309})
                 .then(function (paginationResult) {
                     should.exist(paginationResult.meta);
 
                     paginationResult.meta.pagination.page.should.be.a.Number;
-                    
+
                     done();
                 }).catch(done);
         });
@@ -240,9 +284,7 @@ describe('User Model', function run() {
                 found.attributes.name.should.equal(firstUser.attributes.name);
 
                 done();
-
             }).catch(done);
-
         });
 
         it('can edit', function (done) {
@@ -261,7 +303,6 @@ describe('User Model', function run() {
                 edited.attributes.website.should.equal('http://some.newurl.com');
 
                 done();
-
             }).catch(done);
         });
 
@@ -269,13 +310,13 @@ describe('User Model', function run() {
             var userData = testUtils.DataGenerator.forModel.users[4];
 
             sandbox.stub(UserModel, 'gravatarLookup', function (userData) {
-                return when.resolve(userData);
+                return Promise.resolve(userData);
             });
 
             RoleModel.findOne().then(function (role) {
                 userData.roles = [role.toJSON()];
 
-                return  UserModel.add(userData, _.extend({}, context));
+                return UserModel.add(userData, _.extend({}, context));
             }).then(function (createdUser) {
                 should.exist(createdUser);
                 createdUser.has('uuid').should.equal(true);
@@ -292,7 +333,6 @@ describe('User Model', function run() {
 
             // Test that we have the user we expect
             UserModel.findOne(firstUser).then(function (results) {
-
                 var user;
                 should.exist(results);
                 user = results.toJSON();
@@ -322,9 +362,7 @@ describe('User Model', function run() {
                 dbHash = uuid.v4();
 
             UserModel.findAll().then(function (results) {
-
                 return UserModel.generateResetToken(results.models[0].attributes.email, expires, dbHash);
-
             }).then(function (token) {
                 should.exist(token);
 
@@ -340,17 +378,11 @@ describe('User Model', function run() {
                 dbHash = uuid.v4();
 
             UserModel.findAll().then(function (results) {
-
                 return UserModel.generateResetToken(results.models[0].attributes.email, expires, dbHash);
-
             }).then(function (token) {
-
                 return UserModel.validateToken(token, dbHash);
-
             }).then(function () {
-
                 done();
-
             }).catch(done);
         });
 
@@ -361,18 +393,14 @@ describe('User Model', function run() {
                 dbHash = uuid.v4();
 
             UserModel.findAll().then(function (results) {
-
                 var firstUser = results.models[0],
                     origPassword = firstUser.attributes.password;
 
                 should.exist(origPassword);
 
                 return UserModel.generateResetToken(firstUser.attributes.email, expires, dbHash);
-
             }).then(function (token) {
-
                 return UserModel.resetPassword(token, 'newpassword', 'newpassword', dbHash);
-
             }).then(function (resetUser) {
                 var resetPassword = resetUser.get('password');
 
@@ -391,18 +419,15 @@ describe('User Model', function run() {
                 dbHash = uuid.v4();
 
             UserModel.findAll().then(function (results) {
-
                 // Store email for later
                 email = results.models[0].attributes.email;
 
                 return UserModel.generateResetToken(email, expires, dbHash);
-
             }).then(function (token) {
                 return UserModel.validateToken(token, dbHash);
             }).then(function () {
                 throw new Error('Allowed expired token');
             }).catch(function (err) {
-
                 should.exist(err);
 
                 err.message.should.equal('Expired token');
@@ -417,11 +442,8 @@ describe('User Model', function run() {
                 dbHash = uuid.v4();
 
             UserModel.findAll().then(function (results) {
-
                 return UserModel.generateResetToken(results.models[0].attributes.email, expires, dbHash);
-
             }).then(function (token) {
-
                 var tokenText = new Buffer(token, 'base64').toString('ascii'),
                     parts = tokenText.split('|'),
                     fakeExpires,
@@ -433,11 +455,9 @@ describe('User Model', function run() {
                 fakeToken = new Buffer(fakeToken).toString('base64');
 
                 return UserModel.validateToken(fakeToken, dbHash);
-
             }).then(function () {
                 throw new Error('allowed invalid token');
             }).catch(function (err) {
-
                 should.exist(err);
 
                 err.message.should.equal('Invalid token');

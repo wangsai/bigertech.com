@@ -8,41 +8,29 @@ var moment      = require('moment'),
     RSS         = require('rss'),
     _           = require('lodash'),
     url         = require('url'),
-    when        = require('when'),
-    cheerio     = require('cheerio'),
-    ue          = require('url-extract')(),
-    fs          = require('fs'),
-
+    Promise     = require('bluebird'),
     api         = require('../api'),
     config      = require('../config'),
-    filters     = require('../../server/filters'),
+    filters     = require('../filters'),
     template    = require('../helpers/template'),
     errors      = require('../errors'),
-
+    cheerio     = require('cheerio'),
+    //add by liuxing
+    fs          = require('fs'),
+    ue          = require('url-extract')(),
+    //end add
     frontendControllers,
     staticPostPermalink,
     oldRoute,
     dummyRouter = require('express').Router(),
-    //add by liuxing  post type  and url relation
-    typeLinks = [],
-    typeNames = [],
     request = require('request'),
+    bigertech = require('../utils/bigertech'),
     doshuoUrl = 'http://api.duoshuo.com/threads/counts.json?short_name=bigertech&threads=';
 
-api.postType.browse().then(function(result){
-    if(result.postTypes){
-        _.forEach(result.postTypes,function(item){
-            typeLinks.push(item.slug);
-            typeNames.push(item.name);
-        });
-    }
-});
-//end add
 // Overload this dummyRouter as we only want the layer object.
 // We don't want to keep in memory many items in an array so we
 // clear the stack array after every invocation.
 oldRoute = dummyRouter.route;
-
 dummyRouter.route = function () {
     var layer;
 
@@ -77,19 +65,16 @@ function getPostPage(options) {
 }
 //add by liuxing  获取文章的 多说信息
 function postAddDuoshuo(posts, postUuids) {
-    var defer = when.defer();
-    request(doshuoUrl+postUuids,function(err,res){
-       if(err){
-
-       }
-       var reposonse =JSON.parse(res.body).response;
-       posts = _.each(posts,function(post){
-           post.duoshuo = reposonse[post.uuid];
-           return post;
-       });
-       defer.resolve(posts);
+    return new Promise(function (resolve, reject) {
+        request(doshuoUrl+postUuids,function(err,res){
+           var reposonse =JSON.parse(res.body).response;
+           posts = _.each(posts,function(post){
+               post.duoshuo = reposonse[post.uuid];
+               return post;
+           });
+            return resolve(posts);
+        });
     });
-    return defer.promise;
 }
 //为响应文章增加多说
 function getVideo(post){
@@ -103,7 +88,6 @@ function getVideo(post){
 function formatPageResponseDuoshuo(posts, page) {
     // Delete email from author for frontend output
     // TODO: do this on API level if no context is available
-    var defer = when.defer();
     var postUuids = '';
     posts = _.each(posts, function (post) {
         if (post.author) {
@@ -113,14 +97,12 @@ function formatPageResponseDuoshuo(posts, page) {
         postUuids += post.uuid+',';
         return post;
     });
-    postAddDuoshuo(posts,postUuids).then(function(posts){
-        defer.resolve({
+    return postAddDuoshuo(posts,postUuids).then(function(posts){
+        return Promise.resolve({
             posts: posts,
             pagination: page.meta.pagination
         });
     });
-    return defer.promise;
-
 }
 //end add
 function formatPageResponse(posts, page) {
@@ -161,10 +143,37 @@ function formatResponse(post) {
 
 function handleError(next) {
     return function (err) {
-        var e = new Error(err.message);
-        e.status = err.code;
-        return next(e);
+        return next(err);
     };
+}
+
+function setResponseContext(req, res, data) {
+    var contexts = [],
+        pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1;
+
+    // paged context
+    if (!isNaN(pageParam) && pageParam > 1) {
+        contexts.push('paged');
+    }
+
+    if (req.route.path === '/page/:page/') {
+        contexts.push('index');
+    } else if (req.route.path === '/') {
+        contexts.push('home');
+        contexts.push('index');
+    } else if (/\/rss\/(:page\/)?$/.test(req.route.path)) {
+        contexts.push('rss');
+    } else if (/^\/tag\//.test(req.route.path)) {
+        contexts.push('tag');
+    } else if (/^\/author\//.test(req.route.path)) {
+        contexts.push('author');
+    } else if (data && data.post && data.post.page) {
+        contexts.push('page');
+    } else {
+        contexts.push('post');
+    }
+
+    res.locals.context = contexts;
 }
 
 // Add Request context parameter to the data object
@@ -194,7 +203,7 @@ function getActiveThemePaths() {
 }
 
 frontendControllers = {
-    'homepage': function (req, res, next) {
+    homepage: function (req, res, next) {
         // Parse the page number
         var pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1,
             options = {
@@ -207,7 +216,6 @@ frontendControllers = {
         }
 
         return getPostPage(options).then(function (page) {
-
             // If page is greater than number of pages we have, redirect to last page
             if (pageParam > page.meta.pagination.pages) {
                 return res.redirect(page.meta.pagination.pages === 1 ? config.paths.subdir + '/' : (config.paths.subdir + '/page/' + page.meta.pagination.pages + '/'));
@@ -233,14 +241,15 @@ frontendControllers = {
 
                 });
             });
-        }).otherwise(handleError(next));
+        }).catch(handleError(next));
     },
     // add by liuxing add article、video  list
-    'category': function (req, res, next) {
+    category: function (req, res, next) {
+
         // Parse the page number
         var category = req.params.category,
-            post_type = _.indexOf(typeLinks,category),
-            meta_title = typeNames[post_type],
+            post_type = _.indexOf(bigerteh.typeLinks,category),
+            meta_title = bigerteh.typeNames[post_type],
             pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1,
             options = {
                 page: pageParam,
@@ -276,10 +285,10 @@ frontendControllers = {
                     });
                 });
             });
-        }).otherwise(handleError(next));
+        }).catch(handleError(next));
     },
     // end add
-    'tag': function (req, res, next) {
+    tag: function (req, res, next) {
         // Parse the page number
         var pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1,
             options = {
@@ -317,42 +326,32 @@ frontendControllers = {
             // Render the page of posts
             filters.doFilter('prePostsRender', page.posts).then(function (posts) {
                 getActiveThemePaths().then(function (paths) {
-                    var view = paths.hasOwnProperty('tag.hbs') ? 'tag' : 'index',
-                        result;
+                    var view = template.getThemeViewForTag(paths, options.tag),
 
                         // Format data for template
-//                        result = _.extend(formatPageResponse(posts, page), {
-//                            tag: page.meta.filters.tags ? page.meta.filters.tags[0] : ''
-//                        });
-                        //add by liuxing   增加评论点赞数据
-                    formatPageResponseDuoshuo(posts,page).then(function(data){
-
-                        result = _.extend(data, {
+                        result = _.extend(formatPageResponse(posts, page), {
                             tag: page.meta.filters.tags ? page.meta.filters.tags[0] : ''
                         });
-                        //end add
-                        // If the resulting tag is '' then 404.
+                    //add by liuxing   增加评论点赞数据
+                    formatPageResponseDuoshuo(posts,page).then(function(data){
+                    // If the resulting tag is '' then 404.
                         if (!result.tag) {
                             return next();
                         }
+                        setResponseContext(req, res);
                         res.render(view, result);
-
                     });
-
                 });
             });
-        }).otherwise(handleError(next));
+        }).catch(handleError(next));
     },
-    'author': function (req, res, next) {
-
+    author: function(req, res, next) {
         // Parse the page number
         var pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1,
             options = {
                 page: pageParam,
                 author: req.params.slug
             };
-
-
 
         // Get url for tag page
         function authorUrl(author, page) {
@@ -415,10 +414,10 @@ frontendControllers = {
                     });
                 });
             });
-        }).otherwise(handleError(next));
+        }).catch(handleError(next));
     },
 
-    'single': function (req, res, next) {
+    single: function(req, res, next) {
         var path = req.path,
             params,
             editFormat,
@@ -442,7 +441,7 @@ frontendControllers = {
                 // If there are still no matches then return.
                 if (staticPostPermalink.match(path) === false) {
                     // Reject promise chain with type 'NotFound'
-                    return when.reject(new errors.NotFoundError());
+                    return Promise.reject(new errors.NotFoundError());
                 }
 
                 permalink = staticPostPermalink;
@@ -469,20 +468,26 @@ frontendControllers = {
 
             function render() {
                 // If we're ready to render the page but the last param is 'edit' then we'll send you to the edit page.
+                if (params.edit) {
+                    params.edit = params.edit.toLowerCase();
+                }
                 if (params.edit === 'edit') {
                     return res.redirect(config.paths.subdir + '/ghost/editor/' + post.id + '/');
                 } else if (params.edit !== undefined) {
                     // reject with type: 'NotFound'
-                    return when.reject(new errors.NotFoundError());
+                    return Promise.reject(new errors.NotFoundError());
                 }
 
                 setReqCtx(req, post);
 
                 filters.doFilter('prePostsRender', post).then(function (post) {
                     getActiveThemePaths().then(function (paths) {
-                        var view = template.getThemeViewForPost(paths, post);
+                        var view = template.getThemeViewForPost(paths, post),
+                            response = formatResponse(post);
 
-                        res.render(view, formatResponse(post));
+                        setResponseContext(req, res, response);
+
+                        res.render(view, response);
                     });
                 });
             }
@@ -528,8 +533,7 @@ frontendControllers = {
             }
 
             return render();
-
-        }).otherwise(function (err) {
+        }).catch(function (err) {
             // If we've thrown an error message
             // of type: 'NotFound' then we found
             // no path match.
@@ -540,7 +544,7 @@ frontendControllers = {
             return handleError(next)(err);
         });
     },
-    'rss': function (req, res, next) {
+    rss: function (req, res, next) {
         function isPaginated() {
             return req.route.path.indexOf(':page') !== -1;
         }
@@ -588,13 +592,13 @@ frontendControllers = {
             return res.redirect(baseUrl);
         }
 
-        return when.settle([
+        return Promise.all([
             api.settings.read('title'),
             api.settings.read('description'),
             api.settings.read('permalinks')
         ]).then(function (result) {
-
             var options = {};
+
             if (pageParam) { options.page = pageParam; }
             if (isTag()) { options.tag = slugParam; }
             if (isAuthor()) { options.author = slugParam; }
@@ -602,16 +606,14 @@ frontendControllers = {
             options.include = 'author,tags,fields';
 
             return api.posts.browse(options).then(function (page) {
-
-                var title = result[0].value.settings[0].value,
-                    description = result[1].value.settings[0].value,
-                    permalinks = result[2].value.settings[0],
+                var title = result[0].settings[0].value,
+                    description = result[1].settings[0].value,
+                    permalinks = result[2].settings[0],
                     majorMinor = /^(\d+\.)?(\d+)/,
                     trimmedVersion = res.locals.version,
                     siteUrl = config.urlFor('home', {secure: req.secure}, true),
                     feedUrl = config.urlFor('rss', {secure: req.secure}, true),
                     maxPage = page.meta.pagination.pages,
-                    feedItems = [],
                     feed;
 
                 trimmedVersion = trimmedVersion ? trimmedVersion.match(majorMinor)[0] : '?';
@@ -645,11 +647,11 @@ frontendControllers = {
                 }
 
                 setReqCtx(req, page.posts);
+                setResponseContext(req, res);
 
                 filters.doFilter('prePostsRender', page.posts).then(function (posts) {
                     posts.forEach(function (post) {
-                        var deferred = when.defer(),
-                            item = {
+                        var item = {
                                 title: post.title,
                                 guid: post.uuid,
                                 url: config.urlFor('post', {post: post, permalinks: permalinks}, true),
@@ -657,50 +659,29 @@ frontendControllers = {
                                 categories: _.pluck(post.tags, 'name'),
                                 author: post.author ? post.author.name : null
                             },
-                            content = post.html;
+                            htmlContent = cheerio.load(post.html, {decodeEntities: false});
 
-                        //set img src to absolute url
-                        content = content.replace(/src=["|'|\s]?([\w\/\?\$\.\+\-;%:@&=,_]+)["|'|\s]?/gi, function (match, p1) {
-                            /*jslint unparam:true*/
-                            p1 = url.resolve(siteUrl, p1);
-                            return "src=\"" + p1 + "\" ";
-                        });
-                        //set a href to absolute url
-                        content = content.replace(/href=["|'|\s]?([\w\/\?\$\.\+\-;%:@&=,_]+)["|'|\s]?/gi, function (match, p1) {
-                            /*jslint unparam:true*/
-                            p1 = url.resolve(siteUrl, p1);
-                            return "href=\"" + p1 + "\" ";
-                        });
-                        item.description = content;
+                        // convert relative resource urls to absolute
+                        ['href', 'src'].forEach(function (attributeName) {
+                            htmlContent('[' + attributeName + ']').each(function (ix, el) {
+                                el = htmlContent(el);
 
+                                var attributeValue = el.attr(attributeName);
+                                attributeValue = url.resolve(siteUrl, attributeValue);
 
-                        // --- Modified by happen
-                        if (config.cdn.isProduction) {
-                            var $ = cheerio.load(item.description);
-
-                            $('img').each(function(index, elem) {
-                                var src = $(this).attr('src');
-                                if (src.indexOf(config.paths.contentPath)) {
-                                    $(this).attr('src', getCdnImageUrl(src));
-                                }
+                                el.attr(attributeName, attributeValue);
                             });
+                        });
 
-                            item.description = $.html();
-                        }
-                        // --- end
-
+                        item.description = htmlContent.html();
                         feed.item(item);
-                        feedItems.push(deferred.promise);
-                        deferred.resolve();
                     });
-                });
-
-                when.all(feedItems).then(function () {
+                }).then(function () {
                     res.set('Content-Type', 'text/xml; charset=UTF-8');
                     res.send(feed.xml());
                 });
             });
-        }).otherwise(handleError(next));
+         }).catch(handleError(next));
     },
 
     changweiboPage: function(req, res, next) {
@@ -711,7 +692,7 @@ frontendControllers = {
         }).then(function (result) {
             var post = result.posts[0];
             res.render('changweiboPage', formatResponse(post));
-        }).otherwise(function (err) {
+        }).catch(function (err) {
             if (err.type === 'NotFoundError') {
                 return next();
             }
@@ -746,7 +727,7 @@ frontendControllers = {
                 result.image = relPath;
                 res.render('changweibo', result);
             }
-        }).otherwise(function (err) {
+        }).catch(function (err) {
             if (err.type === 'NotFoundError') {
                 return next();
             }
@@ -766,7 +747,7 @@ frontendControllers = {
             }
 
             res.jsonp(relation);
-        }).otherwise(function (err) {
+        }).catch(function (err) {
             if (err.type === 'NotFoundError') {
                 return next();
             }

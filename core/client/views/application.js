@@ -1,29 +1,65 @@
+import mobileQuery from 'ghost/utils/mobile';
+
 var ApplicationView = Ember.View.extend({
+    elementId: 'container',
 
-    setupCloseSidebar: function () {
-
+    setupGlobalMobileNav: function () {
         // #### Navigating within the sidebar closes it.
-        $(document).on('click', '.js-close-sidebar', function () {
-            $('body').removeClass('off-canvas');
+        var self = this;
+        $('body').on('click tap', '.js-nav-item', function () {
+            if (mobileQuery.matches) {
+                self.set('controller.showGlobalMobileNav', false);
+            }
         });
 
-        // #### Add the blog URL to the <a> version of the ghost logo
-        $('.ghost-logo-link').attr('href', this.get('controller.ghostPaths').blogRoot);
+        // #### Close the nav if mobile and clicking outside of the nav or not the burger toggle
+        $('.js-nav-cover').on('click tap', function () {
+            var isOpen = self.get('controller.showGlobalMobileNav');
+            if (isOpen) {
+                self.set('controller.showGlobalMobileNav', false);
+            }
+        });
+
+        // #### Listen to the viewport and change user-menu dropdown triangle classes accordingly
+        mobileQuery.addListener(this.swapUserMenuDropdownTriangleClasses);
+        this.swapUserMenuDropdownTriangleClasses(mobileQuery);
 
     }.on('didInsertElement'),
-    
-    actions: {
-        //Sends the user to the front if they're not on mobile,
-        //otherwise toggles the sidebar.
-        toggleSidebarOrGoHome: function () {
-            if (window.matchMedia('(max-width: 650px)').matches) {
-                $('body').toggleClass('off-canvas');
-            }
-            else {
-                window.location = this.get('controller.ghostPaths').blogRoot;
-            }
+
+    swapUserMenuDropdownTriangleClasses: function (mq) {
+        if (mq.matches) {
+            $('.js-user-menu-dropdown-menu').removeClass('dropdown-triangle-top-right ').addClass('dropdown-triangle-bottom');
+        } else {
+            $('.js-user-menu-dropdown-menu').removeClass('dropdown-triangle-bottom').addClass('dropdown-triangle-top-right');
         }
-    }
+    },
+
+    showGlobalMobileNavObserver: function () {
+        if (this.get('controller.showGlobalMobileNav')) {
+            $('body').addClass('global-nav-expanded');
+        } else {
+            $('body').removeClass('global-nav-expanded');
+        }
+    }.observes('controller.showGlobalMobileNav'),
+
+    setupCloseNavOnDesktop: function () {
+        this.set('closeGlobalMobileNavOnDesktop', _.bind(function closeGlobalMobileNavOnDesktop(mq) {
+            if (!mq.matches) {
+                // Is desktop sized
+                this.set('controller.showGlobalMobileNav', false);
+            }
+        }, this));
+        mobileQuery.addListener(this.closeGlobalMobileNavOnDesktop);
+    }.on('didInsertElement'),
+
+    removeCloseNavOnDesktop: function () {
+        mobileQuery.removeListener(this.closeGlobalMobileNavOnDesktop);
+    }.on('willDestroyElement'),
+
+
+    toggleSettingsMenuBodyClass: function () {
+        $('body').toggleClass('settings-menu-expanded', this.get('controller.showSettingsMenu'));
+    }.observes('controller.showSettingsMenu')
 });
 
 export default ApplicationView;

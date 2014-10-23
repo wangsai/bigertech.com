@@ -1,13 +1,14 @@
-import PopoverMixin from 'ghost/mixins/popover-mixin';
+import DropdownButton from 'ghost/components/gh-dropdown-button';
 
-var PopoverButton = Ember.Component.extend(PopoverMixin, {
-    tagName: 'button',
-    /*matches with the popover this button toggles*/
-    popoverName: null,
-    /*Notify popover service this popover should be toggled*/
-    click: function (event) {
+var PopoverButton = DropdownButton.extend({
+    click: Ember.K, // We don't want clicks on popovers, but dropdowns have them. So `K`ill them here.
+    mouseEnter: function (event) {
         this._super(event);
-        this.get('popover').togglePopover(this.get('popoverName'), this);
+        this.get('dropdown').toggleDropdown(this.get('popoverName'), this);
+    },
+    mouseLeave: function (event) {
+        this._super(event);
+        this.get('dropdown').toggleDropdown(this.get('popoverName'), this);
     }
 });
 

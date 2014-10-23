@@ -5,7 +5,7 @@ var TransferOwnerController = Ember.Controller.extend({
                 url = this.get('ghostPaths.url').api('users', 'owner'),
                 self = this;
 
-            self.get('popover').closePopovers();
+            self.get('dropdown').closeDropdowns();
 
             ic.ajax.request(url, {
                 type: 'PUT',
@@ -26,7 +26,7 @@ var TransferOwnerController = Ember.Controller.extend({
                     });
                 }
 
-                self.notifications.showSuccess('博客所有权已经成功转移给 ' + user.get('name'));
+                self.notifications.showSuccess('Ownership successfully transferred to ' + user.get('name'));
             }).catch(function (error) {
                 self.notifications.showAPIError(error);
             });
@@ -39,12 +39,12 @@ var TransferOwnerController = Ember.Controller.extend({
 
     confirm: {
         accept: {
-            text: '是的 - 我确定',
-            buttonClass: 'button-delete'
+            text: 'Yep - I\'m sure',
+            buttonClass: 'btn btn-red'
         },
         reject: {
-            text: '取消',
-            buttonClass: 'button'
+            text: 'Cancel',
+            buttonClass: 'btn btn-default btn-minor'
         }
     }
 });

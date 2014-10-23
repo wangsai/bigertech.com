@@ -5,7 +5,7 @@ var nock            = require('nock'),
     should          = require('should'),
     sinon           = require('sinon'),
     testUtils       = require('../utils'),
-    when            = require('when'),
+    Promise         = require('bluebird'),
     xmlrpc          = require('../../server/xmlrpc'),
     // storing current environment
     currentEnv      = process.env.NODE_ENV;
@@ -28,13 +28,12 @@ describe('XMLRPC', function () {
         process.env.NODE_ENV = currentEnv;
     });
 
-
     it('should execute two pings', function (done) {
         var ping1 = nock('http://blogsearch.google.com').post('/ping/RPC2').reply(200),
             ping2 = nock('http://rpc.pingomatic.com').post('/').reply(200),
             testPost = testUtils.DataGenerator.Content.posts[2],
             settingsStub = sandbox.stub(settings, 'read', function () {
-                return when({ settings: [{value: '/:slug/'}] });
+                return Promise.resolve({settings: [{value: '/:slug/'}]});
             });
         /*jshint unused:false */
 
@@ -45,5 +44,4 @@ describe('XMLRPC', function () {
             done();
         }).catch(done);
     });
-
 });

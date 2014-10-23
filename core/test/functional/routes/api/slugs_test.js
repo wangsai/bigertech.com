@@ -3,25 +3,19 @@
 var testUtils     = require('../../../utils'),
     should        = require('should'),
     supertest     = require('supertest'),
-    express       = require('express'),
 
     ghost         = require('../../../../../core'),
 
-    httpServer,
     request;
 
 describe('Slug API', function () {
     var accesstoken = '';
 
     before(function (done) {
-        var app = express();
-
         // starting ghost automatically populates the db
         // TODO: prevent db init, and manage bringing up the DB with fixtures ourselves
-        ghost({app: app}).then(function (_httpServer) {
-            httpServer = _httpServer;
-            request = supertest.agent(app);
-
+        ghost().then(function (ghostServer) {
+            request = supertest.agent(ghostServer.rootApp);
         }).then(function () {
             return testUtils.doAuth(request);
         }).then(function (token) {
@@ -35,15 +29,15 @@ describe('Slug API', function () {
 
     after(function (done) {
         testUtils.clearData().then(function () {
-            httpServer.close();
             done();
-        });
+        }).catch(done);
     });
 
     it('should be able to get a post slug', function (done) {
         request.get(testUtils.API.getApiQuery('slugs/post/a post title/'))
             .set('Authorization', 'Bearer ' + accesstoken)
             .expect('Content-Type', /json/)
+            .expect('Cache-Control', testUtils.cacheRules['private'])
             .expect(200)
             .end(function (err, res) {
                 if (err) {
@@ -66,6 +60,7 @@ describe('Slug API', function () {
         request.get(testUtils.API.getApiQuery('slugs/post/atag/'))
             .set('Authorization', 'Bearer ' + accesstoken)
             .expect('Content-Type', /json/)
+            .expect('Cache-Control', testUtils.cacheRules['private'])
             .expect(200)
             .end(function (err, res) {
                 if (err) {
@@ -88,6 +83,7 @@ describe('Slug API', function () {
         request.get(testUtils.API.getApiQuery('slugs/user/user name/'))
             .set('Authorization', 'Bearer ' + accesstoken)
             .expect('Content-Type', /json/)
+            .expect('Cache-Control', testUtils.cacheRules['private'])
             .expect(200)
             .end(function (err, res) {
                 if (err) {
@@ -110,6 +106,7 @@ describe('Slug API', function () {
         request.get(testUtils.API.getApiQuery('slugs/app/cool app/'))
             .set('Authorization', 'Bearer ' + accesstoken)
             .expect('Content-Type', /json/)
+            .expect('Cache-Control', testUtils.cacheRules['private'])
             .expect(200)
             .end(function (err, res) {
                 if (err) {
@@ -132,6 +129,7 @@ describe('Slug API', function () {
         request.get(testUtils.API.getApiQuery('slugs/unknown/who knows/'))
             .set('Authorization', 'Bearer ' + accesstoken)
             .expect('Content-Type', /json/)
+            .expect('Cache-Control', testUtils.cacheRules['private'])
             .expect(400)
             .end(function (err, res) {
                 if (err) {

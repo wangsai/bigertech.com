@@ -1,5 +1,5 @@
 var _              = require('lodash'),
-    when           = require('when'),
+    Promise        = require('bluebird'),
     errors         = require('../errors'),
     ghostBookshelf = require('./base'),
     http           = require('http'),
