@@ -1,6 +1,6 @@
 // # Posts API
 var _ = require('lodash'),
-    when = require('when'),
+    Promise = require('bluebird'),
     dataProvider    = require('../models'),
     positionRelations;
 
@@ -9,7 +9,7 @@ positionRelations = {
     findByPositionId: function findByPositionId(id, options) {
         options = options || {};
         if (!id || !_.isNumber(parseInt(id))) {
-            return when.reject([]);
+            return Promise.reject([]);
         }
 
         var qb = dataProvider['PositionRelation'].where({position_id: id});
@@ -22,7 +22,7 @@ positionRelations = {
         }
 
         return qb.fetchAll().then(function(result) {
-            return when.resolve(result.toJSON());
+            return Promise.resolve(result.toJSON());
         });
     },
 
