@@ -47,6 +47,9 @@ posts = {
             return Promise.resolve(result.toJSON());
         })
     },
+    findAll: function(options) {
+        return dataProvider.Post.fetchAll(options);
+    },
     //end add
     /**
      * ### Browse
