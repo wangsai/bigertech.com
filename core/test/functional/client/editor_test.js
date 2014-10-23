@@ -2,7 +2,14 @@
 // Test the editor screen works as expected
 
 /*globals CasperTest, casper, testPost, $ */
-CasperTest.begin('Ghost editor functions correctly', 19, function suite(test) {
+CasperTest.begin('Ghost editor functions correctly', 20, function suite(test) {
+    test.assertHTMLEquals = function (equals, message) {
+        test.assertEvalEquals(function () {
+            return document.querySelector('.entry-preview .rendered-markdown').innerHTML
+                .replace(/<script.*?><\/script>/g, '');
+        }, equals, message);
+    };
+
     casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
         test.assertTitle('Ghost Admin', 'Ghost admin has no title');
         test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
@@ -10,21 +17,22 @@ CasperTest.begin('Ghost editor functions correctly', 19, function suite(test) {
         test.assertExists('.entry-preview', 'Ghost preview is present');
     });
 
-    // Part 1: Test saving with no data - title is required
+    // Part 1: Test saving with no data - title should default
     casper.waitForSelector('#entry-title', function then() {
-        test.assertEvalEquals(function() {
+        test.assertEvalEquals(function () {
             return document.getElementById('entry-title').value;
         }, '', 'Title is empty');
     });
 
     casper.thenClick('.js-publish-button');
 
-    casper.waitForSelector('.notification-error', function onSuccess() {
-        test.assert(true, 'Save without title results in error notification as expected');
-        test.assertSelectorHasText('.notification-error', 'must specify a title', 'notification text is correct');
-        test.assertSelectorDoesntHaveText('.notification-error', '[object Object]');
+    casper.waitForSelector('.notification-success', function onSuccess() {
+        test.assert(true, 'Can save with no title.');
+        test.assertEvalEquals(function () {
+            return document.getElementById('entry-title').value;
+        }, '(Untitled)', 'Title is "(Untitled)"');
     }, function onTimeout() {
-        test.assert(false, 'Save without title did not result in an error notification');
+        test.assert(false, 'Failed to save without a title.');
     });
 
     this.thenClick('.js-bb-notification .close');
@@ -35,8 +43,17 @@ CasperTest.begin('Ghost editor functions correctly', 19, function suite(test) {
         casper.writeContentToCodeMirror(testPost.html);
     });
 
+    // TODO: Expand markdown tests to cover more markdown, and keyboard shortcuts
     casper.waitForSelectorTextChange('.entry-preview .rendered-markdown', function onSuccess() {
-        test.assertSelectorHasText('.entry-preview .rendered-markdown', 'test', 'Editor value is correct.');
+        test.assertSelectorHasText(
+            '.entry-preview .rendered-markdown',
+            'I am a test post.  \n\nI have some small content\n',
+            'Editor HTML preview has correct text.'
+        );
+        test.assertHTMLEquals(
+            '<p>I am a test post.  </p>\n\n<h1 id=\"ihavesomesmallcontent\">I have some small content</h1>\n',
+            'generated HTML is correct'
+        );
     }, casper.failOnTimeout(test, 'markdown did not re-render'));
 
     casper.thenClick('.js-publish-button');
@@ -86,13 +103,21 @@ CasperTest.begin('Ghost editor functions correctly', 19, function suite(test) {
         test.assertSelectorHasText('.entry-word-count', '2 words', 'count of 2 produces plural "words".');
     });
 
+    casper.then(function () {
+        casper.writeContentToCodeMirror('even **more** words'); // append another word, assumes newline
+    });
+
+    casper.waitForSelectorTextChange('.entry-word-count', function onSuccess() {
+        test.assertSelectorHasText('.entry-word-count', '5 words', 'count of 5 produces plural "words".');
+    });
+
     // Part 5: Editor global shortcuts
     casper.then(function tryZenShortcut() {
-        casper.sendKeys('#main', 'z', {modifiers: 'alt+shift'});
+        casper.sendKeys('.page-content', 'z', {modifiers: 'alt+shift'});
     });
 
     casper.waitForSelector('.editor.zen', function then() {
-        casper.waitForTransparent('#global-header', function then() {
+        casper.waitForTransparent('.global-nav', function then() {
             test.assert(true, 'header becomes transparent');
         });
         casper.waitForTransparent('#publish-bar', function then() {
@@ -101,11 +126,11 @@ CasperTest.begin('Ghost editor functions correctly', 19, function suite(test) {
     });
 
     casper.then(function tryZenShortcut() {
-        casper.sendKeys('#main', 'z', {modifiers: 'alt+shift'});
+        casper.sendKeys('.page-content', 'z', {modifiers: 'alt+shift'});
     });
 
     casper.waitWhileSelector('.editor.zen', function then() {
-        casper.waitForOpaque('#global-header', function then() {
+        casper.waitForOpaque('.global-nav', function then() {
             test.assert(true, 'header becomes opaque');
         });
         casper.waitForOpaque('#publish-bar', function then() {
@@ -114,39 +139,44 @@ CasperTest.begin('Ghost editor functions correctly', 19, function suite(test) {
     });
 });
 
-// TODO: Expand markdown tests to cover more markdown, and keyboard shortcuts
-CasperTest.begin('Markdown in editor works', 4, function suite(test) {
-    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
-        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
-        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
-    });
-
-    casper.then(function testImage() {
-        casper.writeContentToCodeMirror('![sometext]()');
-    });
-
-    casper.waitForSelectorTextChange('.entry-preview .rendered-markdown', function onSuccess() {
+CasperTest.begin('Image Uploads', 20, function suite(test) {
+    test.assertHTMLEquals = function (equals, message) {
         test.assertEvalEquals(function () {
-            return document.querySelector('.CodeMirror-wrap textarea').value;
-        }, '![sometext]()', 'Editor value is correct');
+            return document.querySelector('.entry-preview .rendered-markdown').innerHTML
+                .replace(/<script.*?><\/script>/g, '');
+        }, equals, message);
+    };
 
-        test.assertSelectorHasText(
-            '.entry-preview .rendered-markdown', 'Add image of sometext', 'Alt value is correct'
-        );
-    }, function onTimeout() {
-        test.assert('false', 'markdown did not re-render');
-    });
-});
-
-CasperTest.begin('Image Uploads', 17, function suite(test) {
     casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
         test.assertTitle('Ghost Admin', 'Ghost admin has no title');
         test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
     });
 
     // Test standard image upload modal
-    casper.then(function () {
-        casper.writeContentToCodeMirror('![]()');
+    casper.then(function testImage() {
+        casper.writeContentToCodeMirror('![some text]()');
+    });
+
+    casper.waitForSelectorTextChange('.entry-preview .rendered-markdown', function onSuccess() {
+        test.assertEvalEquals(function () {
+            return document.querySelector('.CodeMirror-wrap textarea').value;
+        }, '![some text]()', 'Editor value is correct');
+
+        test.assertHTMLEquals('<section id=\"image_upload_1\" class=\"js-drop-zone image-uploader\">' +
+        '<span class=\"media\"><span class=\"hidden\">Image Upload</span></span>' +
+        '<img class=\"js-upload-target\" style=\"display: none; \" src=\"\">' +
+        '<div class=\"description\">Add image of <strong>some text</strong></div>' +
+        '<input class=\"js-fileupload main fileupload\" type=\"file\" name=\"uploadimage\">' +
+        '<div class=\"js-fail failed\" style=\"display: none\">Something went wrong :(</div>' +
+        '<button class=\"js-fail btn btn-green\" style=\"display: none\">Try Again</button>' +
+        '<a class=\"image-url\" title=\"Add image from URL\"><span class=\"hidden\">URL</span></a>' +
+        '</section>\n', 'HTML is correct');
+
+        test.assertSelectorHasText(
+            '.entry-preview .rendered-markdown', 'Add image of some text', 'Alt value is correct'
+        );
+    }, function onTimeout() {
+        test.assert('false', 'markdown did not re-render');
     });
 
     function assertEmptyImageUploaderDisplaysCorrectly() {
@@ -162,7 +192,7 @@ CasperTest.begin('Image Uploads', 17, function suite(test) {
 
     casper.waitForSelector('.image-uploader-url', function onSuccess() {
         test.assertExists('.image-uploader-url .url.js-upload-url', 'Image URL uploader exists');
-        test.assertExists('.image-uploader-url .button-save.js-button-accept', 'Image URL accept button exists');
+        test.assertExists('.image-uploader-url .btn-blue.js-button-accept', 'Image URL accept button exists');
         test.assertExists('.image-uploader-url .image-upload', 'Back to normal image upload style button exists');
     });
 
@@ -172,7 +202,8 @@ CasperTest.begin('Image Uploads', 17, function suite(test) {
         test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
     });
 
-    var testFileLocation = '/test/file/location';
+    var testFileLocation = '/test/file/location',
+        imageURL = 'http://www.random.url';
 
     casper.then(function () {
         var markdownImageString = '![](' + testFileLocation + ')';
@@ -203,10 +234,9 @@ CasperTest.begin('Image Uploads', 17, function suite(test) {
         casper.thenClick('.entry-preview .image-uploader a.image-url');
     });
 
-    var imageURL = 'http://www.random.url';
     casper.waitForSelector('.image-uploader-url', function onSuccess() {
         casper.sendKeys('.image-uploader-url input.url.js-upload-url', imageURL);
-        casper.thenClick('.js-button-accept.button-save');
+        casper.thenClick('.js-button-accept.btn-blue');
     });
 
     casper.waitForSelector('.entry-preview .js-drop-zone.pre-image-uploader', function onSuccess() {
@@ -216,12 +246,13 @@ CasperTest.begin('Image Uploads', 17, function suite(test) {
 });
 
 CasperTest.begin('Tag editor', 7, function suite(test) {
-casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
-    test.assertTitle('Ghost Admin', 'Ghost admin has no title');
-    test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
-});
+    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
+        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
+        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
+    });
 
-    var tagName = 'someTagName';
+    var tagName = 'someTagName',
+        createdTagSelector = '#entry-tags .tags .tag';
 
     casper.then(function () {
         test.assertExists('#entry-tags', 'should have tag label area');
@@ -231,7 +262,6 @@ casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
         casper.sendKeys('#entry-tags input.tag-input', casper.page.event.key.Enter);
     });
 
-    var createdTagSelector = '#entry-tags .tags .tag';
     casper.waitForSelector(createdTagSelector, function onSuccess() {
         test.assertSelectorHasText(createdTagSelector, tagName, 'typing enter after tag name should create tag');
     });
@@ -243,170 +273,7 @@ casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
     });
 });
 
-CasperTest.begin('Post settings menu', 30, function suite(test) {
-    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
-        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
-        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
-    });
-
-    casper.then(function () {
-        test.assertExists('#publish-bar button.post-settings', 'icon toggle should exist');
-        test.assertNotVisible('#publish-bar .post-settings-menu', 'popup menu should not be visible at startup');
-        test.assertExists('.post-settings-menu input#url', 'url field exists');
-        test.assertExists('.post-settings-menu input.post-setting-date', 'publication date field exists');
-        test.assertExists('.post-settings-menu input.post-setting-static-page', 'static page checkbox field exists');
-        test.assertExists('.post-settings-menu button.delete', 'delete post button exists');
-    });
-
-    casper.thenClick('#publish-bar button.post-settings');
-
-    casper.waitUntilVisible('#publish-bar .post-settings-menu', function onSuccess() {
-        test.assert(true, 'popup menu should be visible after clicking post-settings icon');
-        test.assertNotVisible(
-            '.post-settings-menu button.delete', 'delete post button shouldn\'t be visible on unsaved drafts'
-        );
-    });
-
-    casper.thenClick('#publish-bar button.post-settings');
-
-    casper.waitWhileVisible('#publish-bar .post-settings-menu', function onSuccess() {
-        test.assert(true, 'popup menu should not be visible after clicking post-settings icon');
-    });
-
-    // Enter a title and save draft so converting to/from static post
-    // will result in notifications and 'Delete This Post' button appears
-    casper.then(function (){
-        casper.sendKeys('#entry-title', 'aTitle');
-        casper.thenClick('.js-publish-button');
-    });
-
-    casper.waitForSelector('.notification-success', function waitForSuccess() {
-        test.assert(true, 'got success notification');
-        test.assertSelectorHasText('.notification-success', 'Saved.');
-        casper.click('.notification-success .close');
-    }, function onTimeout() {
-        test.assert(false, 'No success notification');
-    });
-
-    casper.waitWhileSelector('.notification-success');
-
-    casper.thenClick('#publish-bar button.post-settings');
-
-    casper.waitUntilVisible('#publish-bar .post-settings-menu', function onSuccess() {
-        test.assert(true, 'post settings menu should be visible after clicking post-settings icon');
-    });
-
-    casper.waitUntilVisible('.post-settings-menu button.delete', function onSuccess() {
-        test.assert(true, 'delete post button should be visible for saved drafts');
-    });
-
-    // Test change permalink
-    casper.then(function () {
-        this.fillSelectors('.post-settings-menu form', {
-            '#url': 'new-url-editor'
-        }, false);
-
-        this.click('#publish-bar button.post-settings');
-    });
-
-    casper.waitForSelector('.notification-success', function waitForSuccess() {
-        test.assert(true, 'got success notification');
-        test.assertSelectorHasText('.notification-success', 'Permalink successfully changed to new-url-editor.');
-        casper.click('.notification-success .close');
-    }, function onTimeout() {
-        test.assert(false, 'No success notification');
-    });
-
-    casper.waitWhileSelector('.notification-success', function () {
-        test.assert(true, 'notification cleared.');
-        test.assertNotVisible('.notification-success', 'success notification should not still exist');
-    });
-
-    // Test change pub date
-    casper.thenClick('#publish-bar button.post-settings');
-
-    casper.waitUntilVisible('#publish-bar .post-settings-menu .post-setting-date', function onSuccess() {
-        test.assert(true, 'post settings menu should be visible after clicking post-settings icon');
-    });
-
-    casper.then(function () {
-        this.fillSelectors('.post-settings-menu form', {
-            '.post-setting-date': '10 May 14 @ 00:17'
-        }, false);
-
-        this.click('#publish-bar button.post-settings');
-    });
-
-   casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function testGoodResponse(resource) {
-        test.assert(400 > resource.status);
-    });
-
-    casper.then(function checkValueMatches() {
-        //using assertField(name) checks the htmls initial "value" attribute, so have to hack around it.
-        var dateVal = this.evaluate(function () {
-            return __utils__.getFieldValue('post-setting-date');
-        });
-        test.assertEqual(dateVal, '10 May 14 @ 00:17');
-    });
-    
-    // Test static page toggling
-    casper.thenClick('.post-settings-menu .post-setting-static-page + label');
-
-    casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function testGoodResponse(resource) {
-        test.assert(400 > resource.status);
-    });
-    
-    casper.then(function staticPageIsCheckedTest() {
-        var checked = casper.evaluate(function evalCheckedProp() {
-            return document.querySelector('.post-setting-static-page').checked
-        });
-        test.assert(checked, 'Turned post into static page.');
-    });
-    
-    casper.thenClick('.post-settings-menu .post-setting-static-page + label');
-
-    casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function testGoodResponse(resource) {
-        test.assert(400 > resource.status);
-    });
-    
-    casper.then(function staticPageIsCheckedTest() {
-        var checked = casper.evaluate(function evalCheckedProp() {
-            return document.querySelector('.post-setting-static-page').checked
-        });
-        test.assert(!checked, 'Turned page into post.');
-    });
-        
-
-
-    // Test Delete Post Modal
-    casper.thenClick('.post-settings-menu button.delete');
-
-    casper.waitUntilVisible('#modal-container', function onSuccess() {
-        test.assert(true, 'delete post modal is visible after clicking delete');
-        test.assertSelectorHasText(
-            '#modal-container .modal-header',
-            'Are you sure you want to delete this post?',
-            'delete post modal header has correct text');
-    });
-
-    casper.thenClick('#modal-container .js-button-reject');
-
-    casper.waitWhileVisible('#modal-container', function onSuccess() {
-        test.assert(true, 'clicking cancel should close the delete post modal');
-    });
-
-    casper.thenClick('#publish-bar button.post-settings');
-    casper.thenClick('.post-settings-menu button.delete');
-    casper.waitUntilVisible('#modal-container', function onSuccess() {
-        casper.thenClick('#modal-container .js-button-accept');
-    });
-
-    casper.waitForUrl(/ghost\/\d+\/$/, function onSuccess() {
-        test.assert(true, 'clicking the delete post button should bring us to the content page');
-    });
-});
-
-CasperTest.begin('Publish menu - new post', 11, function suite(test) {
+CasperTest.begin('Publish menu - new post', 10, function suite(test) {
     casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
         test.assertTitle('Ghost Admin', 'Ghost admin has no title');
         test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
@@ -415,15 +282,20 @@ CasperTest.begin('Publish menu - new post', 11, function suite(test) {
     // ... check default option status, label, class
     casper.then(function () {
         test.assertExists('.js-publish-splitbutton');
-        test.assertExists('.js-publish-splitbutton.splitbutton-save');
         test.assertExists('.js-publish-button');
-        test.assertExists('.js-publish-button.button-save');
+        test.assertExists('.js-publish-button.btn-blue');
         test.assertSelectorHasText('.js-publish-button', 'Save Draft');
+    });
+
+    // Fill headline and content
+    casper.then(function fillContent() {
+        casper.sendKeys('#entry-title', 'Headline');
+        casper.writeContentToCodeMirror('Just a bit of test text');
     });
 
     casper.then(function switchMenuToPublish() {
        // Open the publish options menu;
-        casper.thenClick('.js-publish-splitbutton .options.up');
+        casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
 
         casper.waitForOpaque('.js-publish-splitbutton .open');
 
@@ -431,11 +303,11 @@ CasperTest.begin('Publish menu - new post', 11, function suite(test) {
         casper.thenClick('.js-publish-splitbutton li:first-child a');
 
         // ... check status, label, class
-        casper.waitForSelector('.js-publish-splitbutton.splitbutton-delete', function onSuccess() {
-            test.assertExists('.js-publish-button.button-delete', 'Publish button should have .button-delete');
+        casper.waitForSelector('.js-publish-splitbutton', function onSuccess() {
+            test.assertExists('.js-publish-button.btn-red', 'Publish button should have .btn-red');
             test.assertSelectorHasText('.js-publish-button', 'Publish Now');
         }, function onTimeout() {
-            test.assert(false, 'Publish split button should have .splitbutton-delete');
+            test.assert(false, 'Publish split button works');
         });
     });
 
@@ -443,19 +315,28 @@ CasperTest.begin('Publish menu - new post', 11, function suite(test) {
     casper.thenClick('.js-publish-button');
 
     // ... check status, label, class
-    casper.waitForSelector('.js-publish-splitbutton.splitbutton-save', function onSuccess() {
-        test.assertExists('.js-publish-button.button-save', 'Update button should have .button-save');
+    casper.waitForSelector('.js-publish-splitbutton', function onSuccess() {
+        test.assertExists('.js-publish-button.btn-blue', 'Update button should have .btn-blue');
         test.assertSelectorHasText('.js-publish-button', 'Update Post');
     }, function onTimeout() {
-        test.assert(false, 'Publish split button should have .splitbutton-save');
+        test.assert(false, 'Publish split button works');
     });
 });
 
-CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
+CasperTest.begin('Publish menu - existing post', 23, function suite(test) {
     // Create a post, save it and test refreshed editor
     casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
         test.assertTitle('Ghost Admin', 'Ghost admin has no title');
         test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
+    });
+
+    casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+
+    casper.waitForOpaque('.js-publish-splitbutton .dropdown-menu', function onSuccess() {
+        test.assert(true, 'popup menu should be visible after clicking post-settings icon');
+        test.assertNotVisible(
+            '.js-publish-splitbutton .delete', 'delete post button shouldn\'t be visible on unsaved drafts'
+        );
     });
 
     casper.then(function createTestPost() {
@@ -467,6 +348,8 @@ CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
         test.assertSelectorHasText('.entry-preview .rendered-markdown', 'test', 'Editor value is correct');
     });
 
+    casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+
     // Create a post in draft status
     casper.thenClick('.js-publish-button');
 
@@ -477,15 +360,25 @@ CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
     // ... check option status, label, class now that we're *saved* as 'draft'
     casper.then(function () {
         test.assertExists('.js-publish-splitbutton');
-        test.assertExists('.js-publish-splitbutton.splitbutton-save');
         test.assertExists('.js-publish-button');
-        test.assertExists('.js-publish-button.button-save');
+        test.assertExists('.js-publish-button.btn-blue');
         test.assertSelectorHasText('.js-publish-button', 'Save Draft');
     });
 
+    casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+
+    casper.waitForOpaque('.js-publish-splitbutton .open', function onSuccess() {
+        test.assert(true, 'delete post button should be visible for saved drafts');
+        test.assertVisible(
+            '.js-publish-splitbutton .delete', 'delete post button should be visible on saved drafts'
+        );
+    });
+
+    casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+
     casper.then(function switchMenuToPublish() {
         // Open the publish options menu;
-        casper.thenClick('.js-publish-splitbutton .options.up');
+        casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
 
         casper.waitForOpaque('.js-publish-splitbutton .open');
 
@@ -493,11 +386,11 @@ CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
         casper.thenClick('.js-publish-splitbutton li:first-child a');
 
         // ... check status, label, class
-        casper.waitForSelector('.js-publish-splitbutton.splitbutton-delete', function onSuccess() {
-            test.assertExists('.js-publish-button.button-delete', 'Publish button should have .button-delete');
+        casper.waitForSelector('.js-publish-splitbutton', function onSuccess() {
+            test.assertExists('.js-publish-button.btn-red', 'Publish button should have .btn-red');
             test.assertSelectorHasText('.js-publish-button', 'Publish Now');
         }, function onTimeout() {
-            test.assert(false, 'Publish split button should have .splitbutton-delete');
+            test.assert(false, 'Publish split button works');
         });
     });
 
@@ -511,15 +404,14 @@ CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
     // ... check option status, label, class for saved as 'published'
     casper.then(function () {
         test.assertExists('.js-publish-splitbutton');
-        test.assertExists('.js-publish-splitbutton.splitbutton-save');
         test.assertExists('.js-publish-button');
-        test.assertExists('.js-publish-button.button-save');
+        test.assertExists('.js-publish-button.btn-blue');
         test.assertSelectorHasText('.js-publish-button', 'Update Post');
     });
 
     casper.then(function switchMenuToUnpublish() {
         // Open the publish options menu;
-        casper.thenClick('.js-publish-splitbutton .options.up');
+        casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
 
         casper.waitForOpaque('.js-publish-splitbutton .open');
 
@@ -527,11 +419,11 @@ CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
         casper.thenClick('.js-publish-splitbutton li:nth-child(2) a');
 
         // ... check status, label, class
-        casper.waitForSelector('.js-publish-splitbutton.splitbutton-delete', function onSuccess() {
-            test.assertExists('.js-publish-button.button-delete', 'Publish button should have .button-delete');
+        casper.waitForSelector('.js-publish-splitbutton', function onSuccess() {
+            test.assertExists('.js-publish-button.btn-red', 'Publish button should have .btn-red');
             test.assertSelectorHasText('.js-publish-button', 'Unpublish');
         }, function onTimeout() {
-            test.assert(false, 'Publish split button should have .splitbutton-delete');
+            test.assert(false, 'Publish split button works');
         });
     });
     // Do unpublish
@@ -539,15 +431,164 @@ CasperTest.begin('Publish menu - existing post', 21, function suite(test) {
 
     casper.waitForSelector('.notification-success', function checkPostWasCreated() {
         // ... check status, label, class
-        casper.waitForSelector('.js-publish-splitbutton.splitbutton-save', function onSuccess() {
-            test.assertExists('.js-publish-button.button-save', 'Publish button should have .button-save');
+        casper.waitForSelector('.js-publish-splitbutton', function onSuccess() {
+            test.assertExists('.js-publish-button.btn-blue', 'Publish button should have .btn-blue');
             test.assertSelectorHasText('.js-publish-button', 'Save Draft');
         }, function onTimeout() {
-            test.assert(false, 'Publish split button should have .splitbutton-save');
+            test.assert(false, 'Publish split button works');
         });
     });
 });
 
+CasperTest.begin('Publish menu - delete post', 7, function testDeleteModal(test) {
+    // Create a post that can be deleted
+    CasperTest.Routines.createTestPost.run(false);
+
+    // Begin test
+    casper.thenOpenAndWaitForPageLoad('content', function testTitleAndUrl() {
+        test.assertTitle('Ghost Admin', 'Title is "Ghost Admin"');
+        test.assertUrlMatch(/ghost\/\d+\/$/, 'Landed on the correct URL');
+    });
+
+    // Transition to the editor
+    casper.thenClick('.post-edit');
+    casper.waitForSelector('#entry-title');
+
+    // Open post settings menu
+    casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+    casper.waitForOpaque('.js-publish-splitbutton .open');
+    casper.thenClick('.js-publish-splitbutton li:nth-child(4) a');
+
+    casper.waitUntilVisible('#modal-container', function onSuccess() {
+        test.assertSelectorHasText(
+            '.modal-content .modal-header',
+            'Are you sure you want to delete this post?',
+            'delete modal has correct text');
+    });
+
+    casper.thenClick('.js-button-reject');
+
+    casper.waitWhileVisible('#modal-container', function onSuccess() {
+        test.assert(true, 'clicking cancel should close the delete post modal');
+    });
+
+    // Test delete
+    casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+    casper.waitForOpaque('.js-publish-splitbutton .open');
+    casper.thenClick('.js-publish-splitbutton li:nth-child(4) a');
+
+    casper.waitForSelector('#modal-container .modal-content', function onSuccess() {
+        test.assertExists('.modal-content .js-button-accept', 'delete button exists');
+
+        // Delete the post
+        this.click('.modal-content .js-button-accept');
+
+        casper.waitForSelector('.notification-success', function onSuccess() {
+            test.assert(true, 'Got success notification from delete post');
+            test.assertSelectorHasText('.notification-message', 'Your post has been deleted.');
+        }, function onTimeout() {
+            test.fail('No success notification from delete post');
+        });
+    });
+});
+
+CasperTest.begin('Publish menu - new post status is correct after failed save', 4, function suite(test) {
+    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
+        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
+        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
+    });
+
+    // Fill title and content
+    casper.then(function writePost() {
+        casper.sendKeys('#entry-title', new Array(160).join('x'));
+    });
+
+    casper.then(function switchMenuToPublish() {
+       // Open the publish options menu;
+        casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+
+        casper.waitForOpaque('.js-publish-splitbutton .open');
+
+        // Select the publish post button
+        casper.thenClick('.js-publish-splitbutton li:first-child a');
+    });
+
+    // attempt to save
+    casper.thenClick('.js-publish-button');
+
+    // ... check status, label, class
+    casper.waitForSelector('.notification-error', function onSuccess() {
+        test.assertExists('.js-publish-button.btn-blue', 'Update button should have .btn-blue');
+        // wait for button to settle
+        casper.wait(500);
+        test.assertSelectorHasText('.js-publish-button', 'Save Draft');
+    }, function onTimeout() {
+        test.assert(false, 'Saving post with invalid title should trigger an error');
+    });
+
+    // Click on "Content" in the main nav
+    casper.thenClick('.nav-content');
+
+    // The "Are you sure?" modal appears
+    casper.waitUntilVisible('.modal-content', function onSuccess() {
+        casper.thenClick('.btn-red');
+    }, function onTimeout() {
+        test.assert(false, 'Are you sure you want to leave modal did not appear.');
+    });
+});
+
+CasperTest.begin('Publish menu - existing post status is correct after failed save', 6, function suite(test) {
+    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
+        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
+        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
+    });
+
+    // Fill title and content
+    casper.then(function writePost() {
+        casper.sendKeys('#entry-title', 'a valid title');
+        casper.writeContentToCodeMirror('body content');
+    });
+
+    // save
+    casper.thenClick('.js-publish-button');
+
+    casper.waitForSelector('.notification-success');
+
+    casper.then(function updateTitle() {
+        casper.sendKeys('#entry-title', new Array(160).join('y'));
+    });
+
+    casper.then(function switchMenuToPublish() {
+        // Open the publish options menu;
+        casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+
+        casper.waitForOpaque('.js-publish-splitbutton .open');
+
+        // Select the publish post button
+        casper.thenClick('.js-publish-splitbutton li:first-child a');
+
+        // ... check status, label, class
+        casper.waitForSelector('.js-publish-splitbutton', function onSuccess() {
+            test.assertExists('.js-publish-button.btn-red', 'Publish button should have .btn-red');
+            test.assertSelectorHasText('.js-publish-button', 'Publish Now');
+        }, function onTimeout() {
+            test.assert(false, 'Publish split button works');
+        });
+    });
+
+    // attempt to save
+    casper.thenClick('.js-publish-button');
+
+    // ... check status, label, class
+    casper.waitForSelector('.notification-error', function onSuccess() {
+        test.assertExists('.js-publish-button.btn-blue', 'Update button should have .btn-blue');
+        // wait for button to settle
+        casper.wait(500);
+        test.assertSelectorHasText('.js-publish-button', 'Save Draft');
+    }, function onTimeout() {
+        test.assert(false, 'Saving post with invalid title should trigger an error');
+    });
+});
 
 // test the markdown help modal
 CasperTest.begin('Markdown help modal', 5, function suite(test) {
@@ -573,4 +614,100 @@ CasperTest.begin('Markdown help modal', 5, function suite(test) {
     casper.waitWhileVisible('#modal-container', function onSuccess() {
         test.assert(true, 'clicking close should remove the markdown help modal');
     });
+});
+
+// test editor title input is correct after changing a post attribute in the post-settings-menu
+CasperTest.begin('Title input is set correctly after using the Post-Settings-Menu', function suite(test) {
+    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
+        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
+        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
+    });
+
+    // add a new post
+    casper.then(function fillContent() {
+        casper.sendKeys('#entry-title', 'post title');
+        casper.writeContentToCodeMirror('Just a bit of test text');
+    });
+
+    // save draft
+    casper.thenClick('.js-publish-button');
+
+    casper.waitForSelector('.notification-success');
+
+    // change the title
+    casper.then(function updateTitle() {
+        casper.sendKeys('#entry-title', 'changed post title');
+        casper.click('#entry-markdown-content');
+    });
+
+    // change a post attribute via the post-settings-menu
+
+    casper.thenClick('.post-settings');
+
+    casper.then(function () {
+        this.fillSelectors('.settings-menu form', {
+            '#url': 'changed-slug'
+        }, false);
+
+        this.click('.post-settings');
+    });
+
+    casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function testGoodResponse(resource) {
+        test.assert(resource.status < 400);
+    });
+
+    casper.then(function checkTitleInput() {
+        test.assertEvalEquals(function () {
+            return $('#entry-title').val();
+        }, 'changed post title', 'Title input should match expected value.');
+    });
+});
+
+// test editor content input is correct after changing a post attribute in the post-settings-menu
+CasperTest.begin('Editor content is set correctly after using the Post-Settings-Menu', function suite(test) {
+    casper.thenOpenAndWaitForPageLoad('editor', function testTitleAndUrl() {
+        test.assertTitle('Ghost Admin', 'Ghost admin has no title');
+        test.assertUrlMatch(/ghost\/editor\/$/, 'Landed on the correct URL');
+    });
+
+    // add a new post
+    casper.then(function fillContent() {
+        casper.sendKeys('#entry-title', 'post title');
+        casper.writeContentToCodeMirror('Just a bit of test text');
+    });
+
+    // save draft
+    casper.thenClick('.js-publish-button');
+
+    casper.waitForSelector('.notification-success');
+
+    // change the content
+    casper.then(function updateContent() {
+        casper.writeContentToCodeMirror('updated content');
+        casper.click('#entry-title');
+    });
+
+    // change a post attribute via the post-settings-menu
+
+    casper.thenClick('.post-settings');
+
+    casper.then(function () {
+        this.fillSelectors('.settings-menu form', {
+            '#url': 'changed-slug-after-update'
+        }, false);
+
+        this.click('.post-settings');
+    });
+
+    casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function testGoodResponse(resource) {
+        test.assert(resource.status < 400);
+    });
+
+    casper.waitForSelectorTextChange('.entry-preview .rendered-markdown', function onSuccess() {
+        test.assertSelectorHasText(
+            '.entry-preview .rendered-markdown',
+            'updated content',
+            'Editor has correct content.'
+        );
+    }, casper.failOnTimeout(test, 'markdown was not available'));
 });

@@ -1,18 +1,23 @@
-<aside class="settings-sidebar" role="complementary">
-    <header>
-        <h1 class="title">设置</h1>
-    </header>
-    <nav class="settings-menu">
+<header class="page-header">
+    <button class="menu-button js-menu-button" {{action "toggleGlobalMobileNav"}}><span class="sr-only">Menu</span></button>
+    <h2 class="page-title">Settings</h2>
+</header>
+
+<div class="page-content">
+    <nav class="settings-nav js-settings-menu">
         <ul>
             {{#unless session.user.isAuthor}}
                 {{#unless session.user.isEditor}}
-                    {{gh-activating-list-item route="settings.general" title="基本设置" classNames="general"}}
+                    {{gh-activating-list-item route="settings.general" title="General" classNames="settings-nav-general icon-settings"}}
                 {{/unless}}
-                {{gh-activating-list-item route="settings.users" title="用户列表" classNames="users"}}
+
+                {{gh-activating-list-item route="settings.users" title="Users" classNames="settings-nav-users icon-users"}}
 
             {{/unless}}
+
+            {{gh-activating-list-item route="settings.about" title="About" classNames="settings-nav-about icon-pacman"}}
         </ul>
     </nav>
-</aside>
 
-{{outlet}}
+    {{outlet}}
+</div>

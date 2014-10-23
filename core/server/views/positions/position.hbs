@@ -26,7 +26,7 @@
     <meta name="msapplication-square150x150logo" content="/ghost/img/medium.png?v=aad122cc47">
     <meta name="msapplication-square310x310logo" content="/ghost/img/large.png?v=aad122cc47">
 
-    <link rel="stylesheet" href="/ghost/css/ghost-ui.min.css?v=aad122cc47">
+    <link rel="stylesheet" href="/ghost/css/bigertech.com.min.css?v=aad122cc47">
 </head>
 <body class="settings">
     <div>
@@ -42,7 +42,7 @@
                     <li class="content js-close-sidebar"><a href="/ghost/">文章列表</a></li>
                     <li class="editor js-close-sidebar"><a href="/ghost/editor/">新建文章</a></li>
                     <li class="settings js-close-sidebar"><a href="/ghost/settings/">设置</a></li>
-                    <li class="js-close-sidebar active"><a class="active" href="/ghost/positionsIndex/">专题管理</a></li>
+                    <li class="js-close-sidebar active"><a class="active" href="/ghost/positions/">专题管理</a></li>
                 </ul>
             </nav>
         </header>
@@ -112,7 +112,7 @@ $(function() {
         posReals.forEach(function(position) {
             result += genNewRow(position, posts);
         });
-
+				console.log(result);
         $('#rows').append(result);
     });
 

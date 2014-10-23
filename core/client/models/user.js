@@ -71,28 +71,29 @@ var User = DS.Model.extend(NProgressSaveMixin, SelectiveSaveMixin, ValidationEng
         });
     },
 
-    passwordValidationErrors: function () {
+    passwordValidationErrors: Ember.computed('password', 'newPassword', 'ne2Password', function () {
         var validationErrors = [];
 
         if (!validator.equals(this.get('newPassword'), this.get('ne2Password'))) {
-            validationErrors.push({message: '新密码不匹配'});
+            validationErrors.push({message: 'Your new passwords do not match'});
         }
 
         if (!validator.isLength(this.get('newPassword'), 8)) {
-            validationErrors.push({message: '密码长度至少要8个字符'});
+            validationErrors.push({message: 'Your password is not long enough. It must be at least 8 characters long.'});
         }
 
         return validationErrors;
-    }.property('password', 'newPassword', 'ne2Password'),
+    }),
 
     isPasswordValid: Ember.computed.empty('passwordValidationErrors.[]'),
-    active: function () {
+
+    active: Ember.computed('status', function () {
         return _.contains(['active', 'warn-1', 'warn-2', 'warn-3', 'warn-4', 'locked'], this.get('status'));
-    }.property('status'),
-    invited: function () {
+    }),
+    invited: Ember.computed('status', function () {
         return _.contains(['invited', 'invited-pending'], this.get('status'));
-    }.property('status'),
-    pending: Ember.computed.equal('status', 'invited-pending').property('status')
+    }),
+    pending: Ember.computed.equal('status', 'invited-pending')
 });
 
 export default User;

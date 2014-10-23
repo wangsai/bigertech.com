@@ -2,11 +2,11 @@
 /*jshint expr:true*/
 var testUtils    = require('../../utils'),
     should       = require('should'),
-    sequence     = require('when/sequence'),
+    sequence     = require('../../../server/utils/sequence'),
     _            = require('lodash'),
 
     // Stuff we are testing
-    AppModel     = require('../../../server/models').App,
+    AppModel     = require('../../../server/models/app').App,
     context      = testUtils.context.admin;
 
 describe('App Model', function () {
@@ -15,11 +15,12 @@ describe('App Model', function () {
     afterEach(testUtils.teardown);
     beforeEach(testUtils.setup('app'));
 
-    should.exist(AppModel);
+    before(function () {
+        should.exist(AppModel);
+    });
 
     it('can findAll', function (done) {
         AppModel.findAll().then(function (results) {
-
             should.exist(results);
 
             results.length.should.be.above(0);

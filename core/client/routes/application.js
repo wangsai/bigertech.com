@@ -1,3 +1,4 @@
+/* global key */
 import ShortcutsRoute from 'ghost/mixins/shortcuts-route';
 
 var ApplicationRoute = Ember.Route.extend(SimpleAuth.ApplicationRouteMixin, ShortcutsRoute, {
@@ -9,7 +10,8 @@ var ApplicationRoute = Ember.Route.extend(SimpleAuth.ApplicationRouteMixin, Shor
     },
 
     shortcuts: {
-        'esc': 'closePopups'
+        'esc': {action: 'closePopups', scope: 'all'},
+        'enter': {action: 'confirmModal', scope: 'modal'}
     },
 
     actions: {
@@ -25,9 +27,23 @@ var ApplicationRoute = Ember.Route.extend(SimpleAuth.ApplicationRouteMixin, Shor
             this._super();
         },
 
+        toggleGlobalMobileNav: function () {
+            this.toggleProperty('controller.showGlobalMobileNav');
+        },
+
+        toggleSettingsMenu: function () {
+            this.toggleProperty('controller.showSettingsMenu');
+        },
+        closeSettingsMenu: function () {
+            this.set('controller.showSettingsMenu', false);
+        },
+
         closePopups: function () {
-            this.get('popover').closePopovers();
+            this.get('dropdown').closeDropdowns();
             this.get('notifications').closeAll();
+
+            // Close right outlet if open
+            this.send('closeSettingsMenu');
 
             this.send('closeModal');
         },
@@ -64,8 +80,10 @@ var ApplicationRoute = Ember.Route.extend(SimpleAuth.ApplicationRouteMixin, Shor
         },
 
         openModal: function (modalName, model, type) {
-            this.get('popover').closePopovers();
+            this.get('dropdown').closeDropdowns();
+            key.setScope('modal');
             modalName = 'modals/' + modalName;
+            this.set('modalName', modalName);
             // We don't always require a modal to have a controller
             // so we're skipping asserting if one exists
             if (this.controllerFor(modalName, true)) {
@@ -76,17 +94,27 @@ var ApplicationRoute = Ember.Route.extend(SimpleAuth.ApplicationRouteMixin, Shor
                     this.controllerFor(modalName).set('src', model.get(type));
                 }
             }
+
             return this.render(modalName, {
                 into: 'application',
                 outlet: 'modal'
             });
         },
 
+        confirmModal : function () {
+            var modalName = this.get('modalName');
+            this.send('closeModal');
+            if (this.controllerFor(modalName, true)) {
+                this.controllerFor(modalName).send('confirmAccept');
+            }
+        },
+
         closeModal: function () {
-            return this.disconnectOutlet({
+            this.disconnectOutlet({
                 outlet: 'modal',
                 parentView: 'application'
             });
+            key.setScope('default');
         },
 
         loadServerNotifications: function (isDelayed) {

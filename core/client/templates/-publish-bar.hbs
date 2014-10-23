@@ -1,19 +1,10 @@
 <footer id="publish-bar">
-    <nav>
+    <div class="publish-bar-inner">
         {{render 'post-tags-input'}}
 
-        <div class="right">
-
-            <section id="entry-controls" {{bind-attr class="isNew:unsaved"}}>
-                {{#gh-popover-button popoverName="post-settings-menu" classNames="post-settings" title="Post Settings"}}
-                    <span class="hidden">文章设置</span>
-                {{/gh-popover-button}}
-                {{#gh-popover name="post-settings-menu" classNames="post-settings-menu menu-right"}}
-                    {{render "post-settings-menu" model}}
-                {{/gh-popover}}
-            </section>
-
-            {{view "editor-save-button" id="entry-actions"}}
+        <div class="publish-bar-actions">
+            <button type="button" class='post-settings' {{action "toggleSettingsMenu"}}></button>
+            {{view "editor-save-button" id="entry-actions" classNameBindings="isNew:unsaved"}}
         </div>
-    </nav>
+    </div>
 </footer>

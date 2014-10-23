@@ -1,26 +1,18 @@
 // # Post Model
 var _              = require('lodash'),
     uuid           = require('node-uuid'),
-    when           = require('when'),
+    Promise        = require('bluebird'),
     errors         = require('../errors'),
     Showdown       = require('showdown'),
     cheerio        = require('cheerio'),
     ghostgfm       = require('../../shared/lib/showdown/extensions/ghostgfm'),
     converter      = new Showdown.converter({extensions: [ghostgfm]}),
-    Tag            = require('./tag').Tag,
-    Tags           = require('./tag').Tags,
-    User           = require('./user').User,
     ghostBookshelf = require('./base'),
     xmlrpc         = require('../xmlrpc'),
     util       = require('../utils/'),
     PositionRelation = require('./positionRelation').PositionRelation,
     Post,
     Posts;
-function getPostImg(html){
-    var $       = cheerio.load(html),
-        bgImg   = $("img[alt='bg']");
-    return bgImg.length > 0 ? $(bgImg[0]).attr("src"):null;
-}
 Post = ghostBookshelf.Model.extend({
 
     tableName: 'posts',
@@ -76,7 +68,6 @@ Post = ghostBookshelf.Model.extend({
         /* liuxing */
         var post_type = this.get('post_type') == null ? 0 : this.get('post_type'); //default post type
         this.set('post_type',post_type);
-        this.set('image',getPostImg(this.get('html')));
         /* liuxing */
         if ((this.hasChanged('status') || !this.get('published_at')) && this.get('status') === 'published') {
             if (!this.get('published_at')) {
@@ -90,13 +81,12 @@ Post = ghostBookshelf.Model.extend({
 
         if (this.hasChanged('slug') || !this.get('slug')) {
             // Pass the new slug through the generator to strip illegal characters, detect duplicates
-            return ghostBookshelf.Model.generateSlug(Post, this.get('slug') || 'postSlugInit',
+            return ghostBookshelf.Model.generateSlug(Post, this.get('slug') || this.get('title'),
                     {status: 'all', transacting: options.transacting})
                 .then(function (slug) {
                     self.set({slug: slug});
                 });
         }
-
     },
 
     creating: function (newPage, attr, options) {
@@ -136,10 +126,10 @@ Post = ghostBookshelf.Model.extend({
             tagOps.push(post.tags().detach(null, _.omit(options, 'query')));
 
             if (_.isEmpty(self.myTags)) {
-                return when.all(tagOps);
+                return Promise.all(tagOps);
             }
 
-            return Tags.forge().query('whereIn', 'name', _.pluck(self.myTags, 'name')).fetch(options).then(function (existingTags) {
+            return ghostBookshelf.collection('Tags').forge().query('whereIn', 'name', _.pluck(self.myTags, 'name')).fetch(options).then(function (existingTags) {
                 var doNotExist = [],
                     createAndAttachOperation;
 
@@ -153,11 +143,11 @@ Post = ghostBookshelf.Model.extend({
 
                 // Create tags that don't exist and attach to post
                 _.each(doNotExist, function (tag) {
-                    createAndAttachOperation = Tag.add({name: tag.name}, options).then(function (createdTag) {
+                    createAndAttachOperation = ghostBookshelf.model('Tag').add({name: tag.name}, options).then(function (createdTag) {
                         createdTag = createdTag.toJSON();
                         // _.omit(options, 'query') is a fix for using bookshelf 0.6.8
                         // (https://github.com/tgriesser/bookshelf/issues/294)
-                        return post.tags().attach(createdTag.id, createdTag.name, _.omit(options, 'query'));
+                        return post.tags().attach(createdTag.id, _.omit(options, 'query'));
                     });
 
                     tagOps.push(createAndAttachOperation);
@@ -170,7 +160,7 @@ Post = ghostBookshelf.Model.extend({
                     tagOps.push(post.tags().attach(tag.id, _.omit(options, 'query')));
                 });
 
-                return when.all(tagOps);
+                return Promise.all(tagOps);
             });
         });
     },
@@ -209,6 +199,7 @@ Post = ghostBookshelf.Model.extend({
 
     toJSON: function (options) {
         var attrs = ghostBookshelf.Model.prototype.toJSON.call(this, options);
+
         attrs.author = attrs.author || attrs.author_id;
         delete attrs.author_id;
 
@@ -263,15 +254,14 @@ Post = ghostBookshelf.Model.extend({
     /**
      * ### Find All
      *
-     * @param options
+     * @param {Object} options
      * @returns {*}
      */
     findAll:  function (options) {
         options = options || {};
-        options.withRelated = _.union([ 'tags', 'fields' ], options.include);
+        options.withRelated = _.union(['tags', 'fields'], options.include);
         return ghostBookshelf.Model.findAll.call(this, options);
     },
-
 
     /**
      * #### findPage
@@ -291,7 +281,7 @@ Post = ghostBookshelf.Model.extend({
      *     total: __
      *     }
      *
-     * @params {Object} options
+     * @param {Object} options
      */
     findPage: function (options) {
         options = options || {};
@@ -307,8 +297,8 @@ Post = ghostBookshelf.Model.extend({
         //end by liuxing
 
         var postCollection = Posts.forge(),
-            tagInstance = options.tag !== undefined ? Tag.forge({slug: options.tag}) : false,
-            authorInstance = options.author !== undefined ? User.forge({slug: options.author}) : false;
+            tagInstance = options.tag !== undefined ? ghostBookshelf.model('Tag').forge({slug: options.tag}) : false,
+            authorInstance = options.author !== undefined ? ghostBookshelf.model('User').forge({slug: options.author}) : false;
 
         if (options.limit) {
             options.limit = parseInt(options.limit, 10) || 15;
@@ -347,7 +337,6 @@ Post = ghostBookshelf.Model.extend({
             // make sure that status is valid
             options.status = _.indexOf(['published', 'draft'], options.status) !== -1 ? options.status : 'published';
             options.where.status = options.status;
-
         }
 
         // If there are where conditionals specified, add those
@@ -357,7 +346,7 @@ Post = ghostBookshelf.Model.extend({
         }
 
         // Add related objects
-        options.withRelated = _.union([ 'tags', 'fields'], options.include);
+        options.withRelated = _.union(['tags', 'fields'], options.include);
 
         // If a query param for a tag is attached
         // we need to fetch the tag model to find its id
@@ -375,13 +364,13 @@ Post = ghostBookshelf.Model.extend({
             return false;
         }
 
-        return when.join(fetchTagQuery(), fetchAuthorQuery())
+        return Promise.join(fetchTagQuery(), fetchAuthorQuery())
 
             // Set the limit & offset for the query, fetching
             // with the opts (to specify any eager relations, etc.)
             // Omitting the `page`, `limit`, `where` just to be sure
             // aren't used for other purposes.
-            .then(function(){   //排除专题文章
+            .then(function () {
                 // If we have a tag instance we need to modify our query.
                 // We need to ensure we only select posts that contain
                 // the tag given in the query param.
@@ -498,8 +487,8 @@ Post = ghostBookshelf.Model.extend({
         //end by liuxing
 
         var postCollection = Posts.forge(),
-            tagInstance = options.tag !== undefined ? Tag.forge({slug: options.tag}) : false,
-            authorInstance = options.author !== undefined ? User.forge({slug: options.author}) : false;
+            tagInstance = options.tag !== undefined ? ghostBookshelf.model('Tag').forge({slug: options.tag}) : false,
+            authorInstance = options.author !== undefined ? ghostBookshelf.model('User').forge({slug: options.author}) : false;
 
         if (options.limit) {
             options.limit = parseInt(options.limit, 10) || 15;
@@ -538,7 +527,6 @@ Post = ghostBookshelf.Model.extend({
             // make sure that status is valid
             options.status = _.indexOf(['published', 'draft'], options.status) !== -1 ? options.status : 'published';
             options.where.status = options.status;
-
         }
 
         // If there are where conditionals specified, add those
@@ -548,7 +536,7 @@ Post = ghostBookshelf.Model.extend({
         }
 
         // Add related objects
-        options.withRelated = _.union([ 'tags', 'fields' ], options.include);
+        options.withRelated = _.union(['tags', 'fields'], options.include);
 
         // If a query param for a tag is attached
         // we need to fetch the tag model to find its id
@@ -566,12 +554,7 @@ Post = ghostBookshelf.Model.extend({
             return false;
         }
 
-        return when.join(fetchTagQuery(), fetchAuthorQuery())
-
-            // Set the limit & offset for the query, fetching
-            // with the opts (to specify any eager relations, etc.)
-            // Omitting the `page`, `limit`, `where` just to be sure
-            // aren't used for other purposes.
+        return Promise.join(fetchTagQuery(), fetchAuthorQuery())
             .then(function () {
                 return PositionRelation.findAll(pos).then(function (posts) {
                     var pr = posts.toJSON();
@@ -581,11 +564,16 @@ Post = ghostBookshelf.Model.extend({
                     });
                     return topicId;
                 })
-            }).then(function(topicIds){   //排除专题文章
-                if (options.status !== 'all') {
-                    postCollection.query('where', 'id', 'not in', topicIds);
+            }).then(function(topicIds) {   //排除专题文章
+                if (options.status !== 'all'){
+                    postCollection.query('where', 'id', 'not in',topicIds);
                 }
-
+            })
+            // Set the limit & offset for the query, fetching
+            // with the opts (to specify any eager relations, etc.)
+            // Omitting the `page`, `limit`, `where` just to be sure
+            // aren't used for other purposes.
+            .then(function () {
                 // If we have a tag instance we need to modify our query.
                 // We need to ensure we only select posts that contain
                 // the tag given in the query param.
@@ -706,7 +694,7 @@ Post = ghostBookshelf.Model.extend({
         }
 
         // Add related objects
-        options.withRelated = _.union([ 'tags', 'fields' ], options.include);
+        options.withRelated = _.union(['tags', 'fields'], options.include);
 
         return ghostBookshelf.Model.findOne.call(this, data, options);
     },
@@ -849,7 +837,6 @@ Post = ghostBookshelf.Model.extend({
         });
     },
 
-
     /**
      * ### destroyByAuthor
      * @param  {[type]} options has context and id. Context is the user doing the destroy, id is the user to destroy
@@ -861,18 +848,17 @@ Post = ghostBookshelf.Model.extend({
         options = this.filterOptions(options, 'destroyByAuthor');
         if (authorId) {
             return postCollection.query('where', 'author_id', '=', authorId).fetch(options).then(function (results) {
-                return when.map(results.models, function (post) {
+                return Promise.map(results.models, function (post) {
                     return post.related('tags').detach(null, options).then(function () {
                         return post.destroy(options);
                     });
                 });
             }, function (error) {
-                return when.reject(new errors.InternalServerError(error.message || error));
+                return Promise.reject(new errors.InternalServerError(error.message || error));
             });
         }
-        return when.reject(new errors.NotFoundError('No user found'));
+        return Promise.reject(new errors.NotFoundError('No user found'));
     },
-
 
     permissible: function (postModelOrId, action, context, loadedPermissions, hasUserPermission, hasAppPermission) {
         var self = this,
@@ -899,10 +885,10 @@ Post = ghostBookshelf.Model.extend({
         }
 
         if (hasUserPermission && hasAppPermission) {
-            return when.resolve();
+            return Promise.resolve();
         }
 
-        return when.reject();
+        return Promise.reject();
     }
 });
 

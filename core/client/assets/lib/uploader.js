@@ -63,7 +63,7 @@ UploadUi = function ($dropzone, settings) {
             var self = this;
 
             $dropzone.find('.js-fileupload').fileupload().fileupload('option', {
-                url: Ghost.subdir + '/ghost/api/v0.1/uploads/',
+                url: Ghost.apiRoot + '/uploads/',
                 add: function (e, data) {
                     /*jshint unused:false*/
                     $('.js-button-accept').prop('disabled', true);
@@ -120,16 +120,16 @@ UploadUi = function ($dropzone, settings) {
 
         buildExtras: function () {
             if (!$dropzone.find('span.media')[0]) {
-                $dropzone.prepend('<span class="media"><span class="hidden">图片上传</span></span>');
+                $dropzone.prepend('<span class="media"><span class="hidden">Image Upload</span></span>');
             }
             if (!$dropzone.find('div.description')[0]) {
-                $dropzone.append('<div class="description">添加图片</div>');
+                $dropzone.append('<div class="description">Add image</div>');
             }
             if (!$dropzone.find('div.js-fail')[0]) {
-                $dropzone.append('<div class="js-fail failed" style="display: none">图片上传失败 :(</div>');
+                $dropzone.append('<div class="js-fail failed" style="display: none">Something went wrong :(</div>');
             }
             if (!$dropzone.find('button.js-fail')[0]) {
-                $dropzone.append('<button class="js-fail button-add" style="display: none">再试一次</button>');
+                $dropzone.append('<button class="js-fail btn btn-green" style="display: none">Try Again</button>');
             }
             if (!$dropzone.find('a.image-url')[0]) {
                 $dropzone.append('<a class="image-url" title="Add image from URL"><span class="hidden">URL</span></a>');
@@ -177,7 +177,7 @@ UploadUi = function ($dropzone, settings) {
             $dropzone.find('div.description').before($url);
 
             if (settings.editor) {
-                $dropzone.find('div.js-url').append('<button class="js-button-accept button-save">Save</button>');
+                $dropzone.find('div.js-url').append('<button class="btn btn-blue js-button-accept">Save</button>');
             }
 
             $dropzone.find('.js-button-accept').on('click', function () {

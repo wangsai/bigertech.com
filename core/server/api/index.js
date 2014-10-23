@@ -5,9 +5,10 @@
 // from a theme, an app, or from an external app, you'll use the Ghost JSON API to do so.
 
 var _              = require('lodash'),
-    when           = require('when'),
+    Promise        = require('bluebird'),
     config         = require('../config'),
     // Include Endpoints
+    configuration  = require('./configuration'),
     db             = require('./db'),
     mail           = require('./mail'),
     notifications  = require('./notifications'),
@@ -93,7 +94,7 @@ cacheInvalidationHeader = function (req, result) {
         }
     }
 
-    return when(cacheInvalidate);
+    return Promise.resolve(cacheInvalidate);
 };
 
 /**
@@ -125,7 +126,7 @@ locationHeader = function (req, result) {
         }
     }
 
-    return when(location);
+    return Promise.resolve(location);
 };
 
 /**
@@ -148,7 +149,6 @@ contentDispositionHeader = function () {
     });
 };
 
-
 /**
  * ### Format HTTP Errors
  * Converts the error response from the API into a format which can be returned over HTTP
@@ -168,7 +168,7 @@ formatHttpErrors = function (error) {
     _.each(error, function (errorItem) {
         var errorContent = {};
 
-        //TODO: add logic to set the correct status code
+        // TODO: add logic to set the correct status code
         statusCode = errorItem.code || 500;
 
         errorContent.message = _.isString(errorItem) ? errorItem :
@@ -179,7 +179,6 @@ formatHttpErrors = function (error) {
 
     return {errors: errors, statusCode: statusCode};
 };
-
 
 addHeaders = function (apiMethod, req, res, result) {
     var ops = [],
@@ -200,7 +199,7 @@ addHeaders = function (apiMethod, req, res, result) {
         location = locationHeader(req, result)
             .then(function addLocationHeader(header) {
                 if (header) {
-                    res.set({'Location': header});
+                    res.set({Location: header});
                     // The location header indicates that a new object was created.
                     // In this case the status code should be 201 Created
                     res.status(201);
@@ -222,7 +221,7 @@ addHeaders = function (apiMethod, req, res, result) {
         ops.push(contentDisposition);
     }
 
-    return when.all(ops);
+    return Promise.all(ops);
 };
 
 /**
@@ -281,6 +280,7 @@ module.exports = {
     init: init,
     http: http,
     // API Endpoints
+    configuration: configuration,
     db: db,
     mail: mail,
     notifications: notifications,

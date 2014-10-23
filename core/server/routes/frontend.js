@@ -9,6 +9,24 @@ frontendRoutes = function () {
     var router = express.Router(),
         subdir = config.paths.subdir;
 
+    // ### Admin routes
+    router.get(/^\/(logout|signout)\/$/, function redirect(req, res) {
+        /*jslint unparam:true*/
+        res.set({'Cache-Control': 'public, max-age=' + utils.ONE_YEAR_S});
+        res.redirect(301, subdir + '/ghost/signout/');
+    });
+    router.get(/^\/signup\/$/, function redirect(req, res) {
+        /*jslint unparam:true*/
+        res.set({'Cache-Control': 'public, max-age=' + utils.ONE_YEAR_S});
+        res.redirect(301, subdir + '/ghost/signup/');
+    });
+
+    // redirect to /ghost and let that do the authentication to prevent redirects to /ghost//admin etc.
+    router.get(/^\/((ghost-admin|admin|wp-admin|dashboard|signin|login)\/?)$/, function (req, res) {
+        /*jslint unparam:true*/
+        res.redirect(subdir + '/ghost/');
+    });
+
     // ### Frontend routes
     router.get('/rss/', frontend.rss);
     router.get('/rss/:page/', frontend.rss);
@@ -30,18 +48,9 @@ frontendRoutes = function () {
     router.get('/author/:slug/page/:page/', frontend.author);
     router.get('/author/:slug/', frontend.author);
 
-    // Topic
-    router.get('/topic/:slug/', frontend.topic);
-
-    // ChangWeiBo
-    router.get('/cwbp/:slug', frontend.changweiboPage);
-    router.get('/cwb/:slug', frontend.changweibo);
-
     // Default
     router.get('/page/:page/', frontend.homepage);
     router.get('/', frontend.homepage);
-    router.get('/category/:category', frontend.category);
-    router.get('/category/:category/page/:page', frontend.category);
     router.get('*', frontend.single);
 
     return router;

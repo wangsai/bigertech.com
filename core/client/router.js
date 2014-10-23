@@ -6,7 +6,7 @@ var Router = Ember.Router.extend();
 
 Router.reopen({
     location: 'trailing-history', // use HTML5 History API instead of hash-tag based URLs
-    rootURL: ghostPaths().subdir + '/ghost/', // admin interface lives under sub-directory /ghost
+    rootURL: ghostPaths().adminRoot, // admin interface lives under sub-directory /ghost
 
     clearNotifications: function () {
         this.notifications.closePassive();
@@ -33,6 +33,7 @@ Router.map(function () {
         this.resource('settings.users', { path: '/users' }, function () {
             this.route('user', { path: '/:slug' });
         });
+        this.route('about');
     });
     this.route('debug');
     //Redirect legacy content to posts

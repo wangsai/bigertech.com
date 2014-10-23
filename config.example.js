@@ -9,7 +9,7 @@ config = {
     // ### Development **(default)**
     development: {
         // The url to use when providing links to the site, E.g. in RSS and email.
-        url: 'http://172.16.223.203:2368',
+        url: 'http://172.16.46.171:8001',
 
         // Example mail config
         // Visit http://support.ghost.org/mail for instructions
@@ -55,6 +55,10 @@ config = {
             targetWidth: 350,
             targetHeight: 210,
             scale: 0.6
+        },
+        changweibo: {
+            url: 'http://172.16.46.171:8001',
+            dir: 'changweibo'
         }
     },
 

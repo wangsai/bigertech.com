@@ -1,22 +1,22 @@
-<header class="settings-content-header">
-    {{#link-to 'settings' class='button-back button'}}返回{{/link-to}}
-    <h2 class="title">应用</h2>
+<header class="settings-view-header">
+    {{#link-to 'settings' class='btn btn-default'}}Back{{/link-to}}
+    <h2 class="title">Apps</h2>
 </header>
 
 <section class="content settings-apps">
     <table class="js-apps">
         <thead>
-            <th>应用名字</th>
-            <th>状态</th>
+            <th>App name</th>
+            <th>Status</th>
         </thead>
         <tbody>
         {{#each itemController="settings/app"}}
         <tr>
             <td>
-                {{#if package}}{{package.name}} - {{package.version}}{{else}}{{name}} - package.json 丢失了 :({{/if}}
+                {{#if package}}{{package.name}} - {{package.version}}{{else}}{{name}} - package.json missing :({{/if}}
             </td>
             <td>
-                <button type="button" {{action toggleApp this}} {{bind-attr class=":js-button-active activeClass:button-delete inactiveClass:button-add activeClass:js-button-deactivate"}}>
+                <button type="button" {{action toggleApp this}} {{bind-attr class=":btn :js-button-active activeClass:btn-red inactiveClass:btn-green activeClass:js-button-deactivate"}}>
                     {{buttonText}}
                 </button>
             </td>

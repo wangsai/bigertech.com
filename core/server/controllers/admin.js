@@ -1,8 +1,8 @@
 var _             = require('lodash'),
-    when          = require('when'),
     api           = require('../api'),
     errors        = require('../errors'),
     updateCheck   = require('../update-check'),
+    config        = require('../config'),
     adminControllers;
 
 adminControllers = {
@@ -13,17 +13,16 @@ adminControllers = {
         /*jslint unparam:true*/
 
         function renderIndex() {
-            //add by liuxing clear auth token
-            res.clearCookie('auth');
-            //end add
-            res.render('default');
+            res.render('default', {
+                skip_google_fonts: config.isPrivacyDisabled('useGoogleFonts')
+            });
         }
 
         updateCheck().then(function () {
             return updateCheck.showUpdateNotification();
         }).then(function (updateVersion) {
             if (!updateVersion) {
-                return when.resolve();
+                return;
             }
 
             var notification = {
@@ -32,12 +31,12 @@ adminControllers = {
                 dismissible: false,
                 status: 'persistent',
                 message: '<a href="https://ghost.org/download">Ghost ' + updateVersion +
-                '</a> 已经可以使用! 太好了. 请点击 <a href="http://support.ghost.org/how-to-upgrade/">更新</a> '
+                '</a> is available! Hot Damn. Please <a href="http://support.ghost.org/how-to-upgrade/" target="_blank">upgrade</a> now'
             };
 
             return api.notifications.browse({context: {internal: true}}).then(function (results) {
-                if (!_.some(results.notifications, { message: notification.message })) {
-                    return api.notifications.add({ notifications: [notification] }, {context: {internal: true}});
+                if (!_.some(results.notifications, {message: notification.message})) {
+                    return api.notifications.add({notifications: [notification]}, {context: {internal: true}});
                 }
             });
         }).finally(function () {
