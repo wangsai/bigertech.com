@@ -30,48 +30,52 @@
 </head>
 <body class="settings">
     <div>
-        <header id="global-header" class="navbar">
-            <button class="ghost-logo ghost-logo-button">
-                <span class="hidden">Ghost</span>
-            </button>
-            <a class="ghost-logo ghost-logo-link" href="/">
-                <span class="hidden">Ghost</span>
+        <nav role="navigation" class="global-nav">
+
+            <a title="Visit blog" href="/" class="nav-item ghost-logo">
+                <div class="nav-label"><i class="icon-ghost"></i> <span>Visit blog</span> </div>
             </a>
-            <nav id="global-nav" role="navigation">
-                <ul id="main-menu">
-                    <li class="content js-close-sidebar"><a href="/ghost/">文章列表</a></li>
-                    <li class="editor js-close-sidebar"><a href="/ghost/editor/">新建文章</a></li>
-                    <li class="settings js-close-sidebar"><a href="/ghost/settings/">设置</a></li>
-                    <li class="js-close-sidebar active"><a class="active" href="/ghost/positions/">专题管理</a></li>
-                </ul>
-            </nav>
-        </header>
+
+            <a href="/ghost/" class="ember-view nav-item nav-content js-nav-item" id="ember660">
+                <div class="nav-label"><i class="icon-content"></i> Content</div>
+            </a>
+
+            <a href="/ghost/editor/" class="ember-view nav-item nav-new js-nav-item" id="ember694">
+                <div class="nav-label"><i class="icon-add"></i> New Post</div>
+            </a>
+
+            <script type="text/x-placeholder" id="metamorph-1-start"></script>
+            <a href="/ghost/settings/" class="ember-view nav-item nav-settings js-nav-item" id="ember741">
+                <div class="nav-label"><i class="icon-settings2"></i> Settings</div>
+            </a>
+
+            <a href="/ghost/positions/" class="nav-item nav-settings js-nav-item active">
+                <div class="nav-label"><i class="icon-settings2"></i>位置管理</div>
+            </a>
+
+        </nav>
 
         <main role="main" id="main">
-            <div class="wrapper">
-                <aside class="settings-sidebar" role="complementary">
-                    <header>
-                        <h1 class="title">专题管理</h1>
-                    </header>
-                    <nav class="settings-menu">
-                        <ul>
-                            <li><a href="/ghost/positions/">添加专题</a></li>
-                            {{#each positions}}
-                            <li><a href="/ghost/position/{{id}}">{{name}}</a></li>
-                            {{/each}}
-                        </ul>
-                    </nav>
-                </aside>
+            <div class="page-content">
+                <nav class="settings-nav js-settings-menu">
+                    <ul>
+                        <li class="settings-nav-general icon-add">
+                            <a class="active" href="/ghost/positions/">添加专题</a>
+                        </li>
+                        {{#each positions}}
+                            <li class="settings-nav-general">
+                                <a class="active" href="/ghost/position/{{id}}">{{name}}</a>
+                            </li>
+                        {{/each}}
+                    </ul>
+                </nav>
 
-                <section class="settings-content fade-in">
-                    <header class="settings-content-header">
-                        <h1>{{pageTitle}}</h1>
-                        <div class="settings-header-inner">
-                            <a class="button-back button active" href="/ghost/settings/">返回</a>
-                            <section class="page-actions">
-                                <button type="button" class="button-save" id="insert-new-row">新增</button>
-                            </section>
-                        </div>
+                <section class="settings-content fade-in js-settings-content">
+                    <header class="settings-view-header">
+                        <h2 class="page-title">{{pageTitle}}</h2>
+                        <section class="page-actions">
+                            <button type="button" class="button-save btn btn-blue" id="insert-new-row">新增</button>
+                        </section>
                     </header>
 
                     <section class="content">
