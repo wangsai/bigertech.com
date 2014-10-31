@@ -18,6 +18,7 @@ var moment      = require('moment'),
     //add by liuxing
     fs          = require('fs'),
     ue          = require('url-extract')(),
+    postLink    = require('../utils/bigertech'),
     //end add
     frontendControllers,
     staticPostPermalink,
@@ -64,6 +65,32 @@ function getPostPage(options) {
     });
 }
 //add by liuxing  获取文章的 多说信息
+function getPostPageNoTypes2(options) {
+    return api.settings.read('postsPerPage').then(function (response) {
+        var postPP = response.settings[0],
+            postsPerPage = parseInt(postPP.value, 10);
+
+        // No negative posts per page, must be number
+        if (!isNaN(postsPerPage) && postsPerPage > 0) {
+            options.limit = postsPerPage;
+        }
+        options.include = 'author,tags,fields,post_type';
+        return api.posts.browseNoTypes2(options,true);
+    });
+}
+function getPostPageType(options) {
+    return api.settings.read('postsPerPage').then(function (response) {
+        var postPP = response.settings[0],
+            postsPerPage = parseInt(postPP.value, 10);
+
+        // No negative posts per page, must be number
+        if (!isNaN(postsPerPage) && postsPerPage > 0) {
+            options.limit = postsPerPage;
+        }
+        options.include = 'author,tags,fields,post_type';
+        return api.posts.browse(options);
+    });
+}
 function postAddDuoshuo(posts, postUuids) {
     return new Promise(function (resolve, reject) {
         request(doshuoUrl+postUuids,function(err,res){
@@ -683,7 +710,49 @@ frontendControllers = {
             });
          }).catch(handleError(next));
     },
+    // add by liuxing add article、video  list
+    'category': function (req, res, next) {
+        // Parse the page number
+        var category = req.params.category,
+            post_type = _.indexOf(postLink.typeLinks,category),
+            meta_title = postLink.typeNames[post_type],
+            pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1,
+            options = {
+                page: pageParam,
+                post_type:post_type
+            };
+        // No negative pages, or page 1
+        if (isNaN(pageParam) || pageParam < 1 || (pageParam === 1 && req.route.path === '/page/:page/')) {
+            return res.redirect(config.paths.subdir + '/');
+        }
+        return getPostPageType(options).then(function (page) {
+            // If page is greater than number of pages we have, redirect to last page
+            if (pageParam > page.meta.pagination.pages) {
+                return res.redirect(page.meta.pagination.pages === 1 ? config.paths.subdir + '/' : (config.paths.subdir + '/page/' + page.meta.pagination.pages + '/'));
+            }
+            setReqCtx(req, page.posts);
 
+            // Render the page of posts
+            filters.doFilter('prePostsRender', page.posts).then(function (posts) {
+                getActiveThemePaths().then(function (paths) {
+                    var view = paths.hasOwnProperty('home.hbs') ? 'home' : category;
+
+                    // If we're on a page then we always render the index
+                    // template.
+                    if (pageParam > 1) {
+                        view = category;
+                    }
+
+                    //res.render('list-'+view, formatPageResponse(posts, page));
+                    formatPageResponseDuoshuo(posts, page).then(function(data){
+                        data.meta_title = meta_title;
+                        res.render('list-'+view, data);
+                    });
+                });
+            });
+        }).catch(handleError(next));
+    },
+    // end add
     changweiboPage: function(req, res, next) {
         api.settings.read('permalinks').then(function (response) {
             var postLookup = _.pick({ slug: req.params.slug }, 'slug');
@@ -743,7 +812,7 @@ frontendControllers = {
         // 得到指定slug专题下的所有文章
         api.positions.getRelationsByPositionSlug(slug, {publish: 1 }).then(function(relation) {
             if (!relation) {
-                return when.reject(new errors.NotFoundError('Topic not be found.'));
+                return Promise.reject(new errors.NotFoundError('Topic not be found.'));
             }
 
             res.jsonp(relation);

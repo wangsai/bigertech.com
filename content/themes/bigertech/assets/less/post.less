@@ -8,6 +8,7 @@
 @post-max-width: 726px;
 @video-max-width: 806px;
 @article-font-color:rgba(0, 0, 0, 0.8);;
+@main-color: #53ae65;
 
 //相同部分
 //-------------------------------------------------
@@ -38,13 +39,27 @@
   width: 100%;
 }
 
+.duoshuo {
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
+
+.readmore-container {
+  height: 500px;
+}
 
 .readmore {
   position: relative;
-  height: 500px;
   font-size: 14px;
   color: rgba(255,255,255,0.6);
+  margin-top: 60px;
 
+  a.a-readmore {
+    display: block;
+  }
+  a {
+    color: rgba(255,255,255,0.6);
+  }
   .post-img {
     position: absolute;
     top: 0;
@@ -63,11 +78,11 @@
       width: 100%;
       height: 100%;
       content: "";
-      opacity: 0.3;
-      filter: alpha(opacity=30);
-      -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=30)";
+      opacity: 0.6;
+      filter: alpha(opacity=60);
       background-color: #000;
       background-color: transparent \9;
+      .transition(opacity,ease,.4s);
       z-index: 100;
     }
   }
@@ -79,9 +94,6 @@
       color: rgba(255,255,255,0.6);
       font-size: 14px;
       border-top: 1px solid rgba(255,255,255,0.6);
-    }
-    a:hover {
-      text-decoration: none;
     }
     .name {
       padding-top: 22px;
@@ -110,12 +122,10 @@
 //文章
 //-----------------------------------------------------
 .bg-img-small {
-  /* position: relative; */
   margin-top: 30px;
-  /* padding-top: 35px; */
+
   img {
-    width: 100%;
-    height: auto;
+    max-width: 100%;
   }
 }
 
@@ -150,7 +160,7 @@
 .post {
   margin: 0;
   color: @article-font-color-sm;
-  -webkit-font-smoothing: antialiased;
+//  -webkit-font-smoothing: antialiased;
   line-height: 1.667;
   clear: both;
 
@@ -193,7 +203,7 @@
     font-weight: bold;
   }
   a {
-    color: #53ae65;
+    color: @main-color;
   }
   ol, ul {
     padding-left: 40px;
@@ -234,7 +244,8 @@
 }
 
 
-.share {
+.post-share,
+.video-share{
   display: none;
 }
 
@@ -256,6 +267,10 @@
   }
   .author {
     font-size: 16px;
+
+    a {
+      color: #000;
+    }
   }
 }
 
@@ -271,6 +286,24 @@
 
 #video-play {
   height: 320px;
+}
+
+@media screen and (min-width: 391px) {
+  .bg-img-small-sm {
+    display: none;
+  }
+  .bg-img-small-md {
+    display: block;
+  }
+}
+
+@media screen and (max-width: 390px) {
+  .bg-img-small-sm {
+    display: block;
+  }
+  .bg-img-small-md {
+    display: none;
+  }
 }
 
 @media screen and (min-width: 568px) {
@@ -330,15 +363,6 @@
     }
   }
 
-  .modify #post-banner {
-    .navbar {
-      .icon-bglogo,
-      .icon-search {
-        color: #585a66;
-      }
-    }
-  }
-
   .pv-banner {
     padding: 0;
     max-width: none;
@@ -395,10 +419,6 @@
     right: 0;
     z-index: -10;
     margin-top: 0;
-    -webkit-transition-property: -webkit-transform;
-    transition-property: transform;
-    -webkit-transition-duration: 0.5s;
-    transition-duration: 0.5s;
     overflow: hidden;
 
     &:before {
@@ -441,7 +461,7 @@
     color: rgba(255, 255, 255, 0.7);
     -webkit-animation: bounce 4s 2s infinite;
     animation: bounce 4s 2s infinite;
-    transition: color ease 0.3s;
+    .transition (color,ease,0.3s);
   }
 
   .post-container {
@@ -473,31 +493,68 @@
     }
   }
 
-  .share {
+  .post-share {
     display: block;
     margin-top: 85px;
     height: 30px;
-
+  }
+  .video-share {
+    display: block;
+    margin-top: 55px;
+    height: 30px;
+  }
+  .post-share,
+  .video-share {
     .changweibo {
       display: block;
+      padding: 3px 0;
       width: 112px;
       height: 30px;
-      line-height: 30px;
       font-size: 14px;
-      color: #9b9b9b;
-      border: 1px #9b9b9b solid;
+      color: @main-color;
+      border: 1px @main-color solid;
       .border-radius (50px);
       text-align: center;
 
       &:hover {
         text-decoration: none;
-        background: #9b9b9b;
+        background: @main-color;
         color: #fff;
       }
     }
-    .weibo {
-      padding-right: 10px;
+
+    .bdsharebuttonbox {
+      float: right;
+
+      a {
+        display: inline-block;
+        margin: 0;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        font-size: 19px;
+        text-align: center;
+        color: @main-color;
+        background-image: none;
+        border: 1px solid @main-color;
+        border-radius: 50px;
+
+        &:hover {
+          color: #fff;
+          background: @main-color;
+        }
+      }
+      a.share-wechat {
+        margin-left: 10px;
+      }
     }
+  }
+  .readmore:hover .post-img:before{
+    opacity: .3;
+  }
+  .bd_weixin_popup {
+    height: 294px !important;
   }
 
   //视频
@@ -510,6 +567,7 @@
   .video {
     max-width: 728px;
     margin: 0 auto;
+
   }
 
   .video-bg-img {
@@ -548,23 +606,15 @@
     }
   }
 
-  .modify .video-bg-img {
-    background-color: #fff;
-    opacity: .5;
-    filter: alpha(opacity=50);
-    -webkit-transform: translateY(-25%);
-    transform: translateY(-25%);
-    &:after {
-      opacity: 1;
-      content: "";
-    }
-  }
-
   .video-info {
     position: relative;
     color: #585a66;
     margin-top: 165px;
     text-align: left;
+
+    .author a {
+      color: #585a66;
+    }
   }
 
   #video-container {
@@ -580,6 +630,12 @@
   -ms-border-radius: @radius;
   -o-border-radius: @radius;
   border-radius: @radius;
+}
+.transition (@style,@way,@time) {
+  transition: @style @way @time;
+  -moz-transition: @style @way @time;
+  -webkit-transition: @style @way @time;
+  -o-transition: @style @way @time;
 }
 @-webkit-keyframes bounce {
   0%, 10%, 25%, 40%, 50% {

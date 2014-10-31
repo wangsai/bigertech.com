@@ -50,6 +50,8 @@ frontendRoutes = function () {
 
     // Default
     router.get('/page/:page/', frontend.homepage);
+    router.get('/c/:category', frontend.category);
+    router.get('/c/:category/page/:page', frontend.category);
     router.get('/', frontend.homepage);
     router.get('*', frontend.single);
 
