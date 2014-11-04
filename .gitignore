@@ -46,6 +46,7 @@ Session.vim
 /core/client/docs/_site
 /content/tmp/*
 /content/images/**/*
+/content/images_sm/**/*
 /content/data/*
 /content/apps/**/*
 /content/themes/**/*

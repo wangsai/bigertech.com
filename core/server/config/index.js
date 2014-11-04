@@ -123,6 +123,8 @@ ConfigManager.prototype.set = function (config) {
             themePath:        path.resolve(contentPath, 'themes'),
             appPath:          path.resolve(contentPath, 'apps'),
             imagesPath:       path.resolve(contentPath, 'images'),
+            images_sm_path:   path.resolve(contentPath, 'images_sm'),
+            images_copy_path: require('../../../bg_config').images_copy_path,
             imagesRelPath:    'content/images',
 
             adminViews:       path.join(corePath, '/server/views/'),
@@ -133,7 +135,7 @@ ConfigManager.prototype.set = function (config) {
 
             availableThemes:  this._config.paths.availableThemes || {},
             availableApps:    this._config.paths.availableApps || {},
-            builtScriptPath:  path.join(corePath, 'built/scripts/')
+            builtScriptPath:  path.join(corePath, 'built/scripts/'),
         },
         theme: {
             // normalise the URL by removing any trailing slash
@@ -153,7 +155,9 @@ ConfigManager.prototype.set = function (config) {
         },
         deprecatedItems: ['updateCheck', 'mail.fromaddress'],
         // create a hash for cache busting assets
-        assetHash: assetHash
+        assetHash: assetHash,
+        //add by liuxing
+        bgConfig:        require('../../../bg_config')
     });
 
     // Also pass config object to

@@ -708,7 +708,6 @@ Post = ghostBookshelf.Model.extend({
         if (data.status === 'all') {
             delete data.status;
         }
-
         // Add related objects
         options.withRelated = _.union([ 'tags', 'fields' ], options.include);
         return ghostBookshelf.Model.nextRow.call(this,id,data, options);

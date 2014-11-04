@@ -4,13 +4,14 @@
 var api             = require('../../api'),
     template        = require('../template');
 var next_post = function (options) {
-    var data = (options || {}).hash ||{};
-    var option =  {
+    var options = (options || {}).hash ||{};
+    var options =  {
         include :'author',
-        limit : data.limit ? data.limit:1
+        limit : options.limit ? options.limit:1,
+        post_type : options.type ? parseInt(options.type):0
     };
-    return api.posts.nextRow(this.id,option).then(function(posts){
-        return template.execute('relative_post', {posts:posts});
+    return api.posts.nextRow(this.id,options).then(function(posts){
+        return template.execute('next_post', {posts:posts});
     });
 };
 module.exports = next_post;

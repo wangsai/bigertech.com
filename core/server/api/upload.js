@@ -50,6 +50,12 @@ upload = {
         }).then(function () {
             return store.save(options.uploadimage);
         }).then(function (url) {
+            store.copyToCDN(url);
+            if(config.bgConfig.cdn.isProduction){    //产品环境
+                store.cuttingimage(url).then(function(url_sm){
+                    store.copyToCDN(url_sm);
+                });
+            }
             return url;
         }).finally(function () {
             // Remove uploaded file from tmp location

@@ -239,10 +239,11 @@ ghostBookshelf.Model = ghostBookshelf.Model.extend({
         });
     },
     //add by liuxing  get Next row
-    nextRow: function(id,data,options){
+    preRow: function(id,data,options){
         data = this.filterData(data);
         var limit = options.limit ? options.limit:1;
-        return ghostBookshelf.Collection.forge(data, {model: this}).query(function(q){
+        return ghostBookshelf.Collection.forge([], {model: this}).query(function(q){
+            q.where(data);
             q.where('id','>',id);
             q.orderBy('id','asc');
             q.limit(limit);
@@ -255,13 +256,14 @@ ghostBookshelf.Model = ghostBookshelf.Model.extend({
             return result;
         });
     },
-    preRow: function(id,data,options){
+    nextRow: function(id,data,options){
         data = this.filterData(data);
         var limit = options.limit ? options.limit:1;
-        return ghostBookshelf.Collection.forge(data, {model: this}).query(function(q){
-            q.where('id','<',id);
-            q.orderBy('id','desc');
-            q.limit(limit);
+        return ghostBookshelf.Collection.forge([], {model: this}).query(function(qb){
+            qb.where(data);
+            qb.where('id','<',id);
+            qb.orderBy('id','desc');
+            qb.limit(limit);
         }).fetch(options).then(function (result) {
             if (options.include) {
                 _.each(result.models, function (item) {

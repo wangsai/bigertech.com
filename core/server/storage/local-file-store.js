@@ -9,8 +9,9 @@ var express   = require('express'),
     errors    = require('../errors'),
     config    = require('../config'),
     utils     = require('../utils'),
-    baseStore = require('./base');
-
+    baseStore = require('./base'),
+    images  = require('images');
+config.images = config.bgConfig.images_sm;   //pic cutting config
 function LocalFileStore() {
 }
 util.inherits(LocalFileStore, baseStore);
@@ -53,5 +54,72 @@ LocalFileStore.prototype.serve = function () {
     // For some reason send divides the max age number by 1000
     return express['static'](config.paths.imagesPath, {maxAge: utils.ONE_YEAR_MS});
 };
+//add by liuxing  add cutting image
+LocalFileStore.prototype.cuttingimage = function imageCutting(targetFilename) {
+    var originFile = targetFilename.replace('/images/','/images_sm/');
+    return new Promise(function (resolve) {
+        targetFilename  = path.join(config.paths.appRoot,targetFilename);
+        var targetThumb = targetFilename.replace('/images/','/images_sm/');
+        var ext = path.extname(targetFilename);
+        if(ext == '.gif'){     //if gif , copy it
+            fs.copy(targetFilename,targetThumb,function(err){
+                resolve(originFile);
+            });
+        }else{
+            var img = images(targetFilename);
+            var size = img.size();
+            var srcWidth = size.width;
+            var srcHeight = size.height;
+            var scale = config.images.scale;
+            var cutWidth,cutHeight;
+            if(srcHeight/srcWidth < scale ){
+                cutHeight = srcHeight;
+                cutWidth = srcHeight / scale;
+                x = (srcWidth - cutWidth) / 2;
+                y = 0;
+            }else{
+                cutWidth = srcWidth;
+                cutHeight = srcWidth * scale;
+                y = (srcHeight - cutHeight) / 2;
+                x = 0;
+            }
+            img = images(img, x, y, cutWidth, cutHeight);  //按比例裁剪
+            size = img.size(config.images.targetWidth);    //等比缩放
+            srcWidth = size.width;
+            srcHeight = size.height;
+
+            var targetWidth = config.images.targetWidth || srcWidth;
+            var targetHeight = config.images.targetWidth * config.images.scale || srcHeight;
+
+
+            if (srcWidth < targetWidth || targetWidth <= 0) {
+                targetWidth = srcWidth;
+            }
+            if (srcHeight < targetHeight  || targetHeight <= 0) {
+                targetHeight = srcHeight;
+            }
+
+            var x = 0;
+            var y = 0;
+            if (targetWidth !== x || targetHeight !== y) {
+                // 选取图片的居中位置坐标
+                x = (srcWidth - targetWidth) / 2;
+                y = (srcHeight - targetHeight) / 2;
+            }
+            console.log('cutting : '+targetThumb);
+            images(img, x, y, targetWidth, targetHeight).save(targetThumb);
+            resolve(originFile);
+        }
+    });
+};
+
+LocalFileStore.prototype.copyToCDN = function(imagePath){
+    var srcImage = path.join(config.paths.appRoot,imagePath);
+    imagePath = imagePath.replace('/content/','');
+    destImage =  path.join(config.paths.images_copy_path,imagePath);
+    console.log('copy : %s --> %s',srcImage,destImage);
+    return Promise.promisify(fs.copy)(srcImage, destImage);
+};
+//end add
 
 module.exports = LocalFileStore;

@@ -1,0 +1,19 @@
+{{! 相关文章推荐  next_post limit=1  }}
+
+
+<div class="readmore ">
+    {{#foreach posts}}
+
+      <div class="readmore-container">
+        <div class="post-img" style="background-image: url('{{image}}');"></div>
+
+        <div class="more post-container pv-container">
+          <a href="{{url}}"><h3 class="next">下一篇</h3></a>
+          <a href="{{url}}"><p class="name">{{title}}</p></a>
+                <span class="author">{{author}} • <time
+                  class="post-time">{{date published_at timeago="ture"}}</time></span>
+        </div>
+      </div>
+
+    {{/foreach}}
+</div>

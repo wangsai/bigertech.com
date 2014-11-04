@@ -115,12 +115,11 @@ posts = {
     },
     //add by liuxing
     nextRow: function nextRow(id,options) {
-        var attrs = ['id', 'slug', 'status'],
+        var attrs = ['id', 'slug', 'status','post_type'],
             data = _.pick(options, attrs);
-        options = _.omit(options, attrs);
+            options = _.omit(options, attrs);
 
         // only published posts if no user is present
-
         if (options.include) {
             options.include = prepareInclude(options.include);
         }
@@ -129,11 +128,11 @@ posts = {
                 return  result.toJSON();
             }
 
-            return when.reject(new errors.NotFoundError('Post not found.'));
+            return Promise.reject(new errors.NotFoundError('Post not found.'));
         });
      },
     preRow: function nextRow(id,options) {
-        var attrs = ['id', 'slug', 'status'],
+        var attrs = ['id', 'slug', 'status','post_type'],
             data = _.pick(options, attrs);
         options = _.omit(options, attrs);
 
@@ -145,7 +144,7 @@ posts = {
             if (result) {
                 return  result.toJSON();
             }
-            return when.reject(new errors.NotFoundError('Post not found.'));
+            return Promise.reject(new errors.NotFoundError('Post not found.'));
         });
     },
      /**
@@ -181,7 +180,7 @@ posts = {
                 }
                 return {relatePosts:data};
             }
-            return when.reject(new errors.NotFoundError('Post not found.'));
+            return Promise.reject(new errors.NotFoundError('Post not found.'));
         });
     },
     //
