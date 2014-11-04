@@ -16,7 +16,9 @@ var moment      = require('moment'),
     errors      = require('../errors'),
     cheerio     = require('cheerio'),
     //add by liuxing
+    path        = require('path'),
     fs          = require('fs'),
+    fs_extra    = require('fs-extra'),
     ue          = require('url-extract')(),
     postLink    = require('../utils/bigertech'),
     //end add
@@ -47,7 +49,6 @@ dummyRouter.route = function () {
     // Return layer
     return layer;
 };
-
 // Cache static post permalink regex
 staticPostPermalink = dummyRouter.route('/:slug/:edit?');
 
@@ -771,24 +772,29 @@ frontendControllers = {
 
     changweibo: function(req, res, next) {
         var slug = req.params.slug;
-        var url = config.changweibo.url + '/cwbp/' + slug + '/';
+        var url = config.domain + '/cwbp/' + slug + '/';
         var newPic = req.query.new || false; // 更新一张图片
-        var savePath = config.paths.imagesPath + '/' + config.changweibo.dir + '/' + slug + '.png';
+        var savePath = config.paths.imagesPath + '/' + config.bgConfig.changweibo.dir + '/' + slug + '.png';
+        var relPath = '/' + config.paths.imagesRelPath + '/' + config.bgConfig.changweibo.dir + '/' + slug + '.png';
+
         api.posts.read({slug: slug}).then(function(result) {
-            var relPath = '/' + config.paths.imagesRelPath + '/' + config.changweibo.dir + '/' + slug + '.png';
+            if(result.posts.length <= 0){
+                return new errors.NotFoundError("can not found this url!");
+            }
             result.post = result.posts[0];
             delete result.posts;
             if (!fs.existsSync(savePath) || newPic) {
-                // 截图并保存到目录下
-                if (url.indexOf('http://') === -1) {
-                    url = 'http://' + url;
-                }
                 ue.snapshot(url, {
                     viewportSize:{width:480 },
                     callback: cb,
                     image: savePath
                 });
                 function cb(data) {
+                    if(config.bgConfig.cdn.isProduction) {    //产品环境,拷贝到 CDN
+                        var destImage =  path.join(config.paths.images_copy_path,relPath).replace('/content','');
+                        console.log('copy weibo pic: %s --> %s',savePath,destImage);
+                        fs_extra.copy(savePath,destImage);
+                    }
                     result.image = relPath;
                     res.render('changweibo', result);
                 }
@@ -800,7 +806,6 @@ frontendControllers = {
             if (err.type === 'NotFoundError') {
                 return next();
             }
-
             return handleError(next)(err);
         });
     },

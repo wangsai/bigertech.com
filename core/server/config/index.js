@@ -80,7 +80,6 @@ ConfigManager.prototype.set = function (config) {
     // onto our cached config object.  This allows us to only update our
     // local copy with properties that have been explicitly set.
     _.merge(this._config, config);
-
     // Protect against accessing a non-existant object.
     // This ensures there's always at least a paths object
     // because it's referenced in multiple places.
@@ -157,14 +156,20 @@ ConfigManager.prototype.set = function (config) {
         // create a hash for cache busting assets
         assetHash: assetHash,
         //add by liuxing
-        bgConfig:        require('../../../bg_config')
+        bgConfig:        require('../../../bg_config'),
+
+
     });
 
     // Also pass config object to
     // configUrl object to maintain
     // clean dependency tree
     configUrl.setConfig(this._config);
-
+    //add by liuxing  weibo request url
+    if(this._config.server){
+        this._config.domain =  'http://'+this._config.server.host+':'+this._config.server.port;
+    }
+    //end add
     // For now we're going to copy the current state of this._config
     // so it's directly accessible on the instance.
     // @TODO: perhaps not do this?  Put access of the config object behind

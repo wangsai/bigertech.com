@@ -18,14 +18,13 @@ var config ={
     },
     images_sm: {
         // 如果下面几项留空，则说明上传的图片无需截图
-        dir: path.join(__dirname,'/images_sm/'),
         targetWidth: 350,
         targetHeight: 210,
         scale: 0.6
     },
     changweibo: {
         url: 'http://www.bigertech.com',
-        dir: 'changweibo'
+        dir: 'weibo'
     }
 };
 // Export config
