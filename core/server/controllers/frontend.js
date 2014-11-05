@@ -585,23 +585,6 @@ frontendControllers = {
             return req.route.path.indexOf('/author/') !== -1;
         }
 
-        // --- Modified by happen
-        function getCdnImageUrl(image) {
-            var pos = image.indexOf('images/');
-            if (pos !== -1) {
-                var imgPath = image.substr(pos + 'images/'.length);
-                image = config.cdn.dynamicAssetsUrl;
-                if (config.cdn.dynamicAssetsUrl && config.cdn.dynamicAssetsUrl.substr(-1) !== '/') {
-                    image += '/';
-                }
-
-                image += imgPath;
-            }
-
-            return image;
-        }
-        // --- end
-
         // Initialize RSS
         var pageParam = req.params.page !== undefined ? parseInt(req.params.page, 10) : 1,
             slugParam = req.params.slug,
@@ -700,8 +683,13 @@ frontendControllers = {
                                 el.attr(attributeName, attributeValue);
                             });
                         });
-
-                        item.description = htmlContent.html();
+                        //add by liuxing ; response cdn pic
+                        if(config.bgConfig.cdn.isProduction){
+                             item.description = htmlContent.html().replace(siteUrl+'content/images/',config.bgConfig.cdn.dynamicAssetsUrl);
+                        }else{
+                            item.description = htmlContent.html();
+                        }
+                        //end add
                         feed.item(item);
                     });
                 }).then(function () {

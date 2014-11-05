@@ -59,6 +59,7 @@ coreHelpers.post_star = require('./bg/post_star');
 coreHelpers.post_desc = require('./bg/post_desc');
 coreHelpers.duoshuo_block = require('./bg/duoshuo_block');
 coreHelpers.author_cover = require('./bg/author_cover');
+coreHelpers.content_lazy = require('./bg/content_lazy');
 //end add
 
 // ### Filestorage helper
@@ -172,7 +173,7 @@ registerHelpers = function (adminHbs) {
     registerAdminHelper('file_storage', coreHelpers.file_storage);
     registerAdminHelper('blog_url', coreHelpers.blog_url);
 
-    //add by liuxing
+    //add begin  by liuxing   add helper
     registerAsyncThemeHelper('video_play_count', coreHelpers.video_play_count);
     registerAsyncThemeHelper('post_relative', coreHelpers.post_relative);
     registerAsyncThemeHelper('index_topic', coreHelpers.index_topic);
@@ -190,6 +191,8 @@ registerHelpers = function (adminHbs) {
     registerThemeHelper('post_desc', coreHelpers.post_desc);
     registerThemeHelper('duoshuo_block', coreHelpers.duoshuo_block);
     registerThemeHelper('author_cover', coreHelpers.author_cover);
+    registerThemeHelper('content_lazy', coreHelpers.content_lazy);
+    //add end
 };
 
 module.exports = coreHelpers;
