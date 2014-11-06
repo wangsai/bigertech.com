@@ -16,5 +16,6 @@ var addblank =function(inText){
         .replace(/’/g,"』");
 }
 module.exports = {
-    addblank: addblank
+    addblank: addblank,
+    getCDNImage: require('../../utils/bigertech').getCdnImageUrl
 }

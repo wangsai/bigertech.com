@@ -9,7 +9,7 @@
 var path = require('path');
 var config ={
     default_image_path :'/images/',
-    images_sm_path :'/images_sm/',
+    images_sm_path :'/images/images_sm/',
     images_copy_path: '/data/static/images/',
     cdn: {
         isProduction: true,

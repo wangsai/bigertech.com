@@ -19,17 +19,20 @@ function initLinks(){
     });
 }
 function getCdnImageUrl(image) {
-    var pos = image.indexOf('images/');
-    if (pos !== -1) {
-        var imgPath = image.substr(pos + 'images/'.length);
-        image = config.bgConfig.cdn.dynamicAssetsUrl;
-        if (config.bgConfig.cdn.dynamicAssetsUrl && config.bgConfig.cdn.dynamicAssetsUrl.substr(-1) !== '/') {
-            image += '/';
+    if(config.bgConfig.cdn.isProduction) {
+        var pos = image.indexOf('images/');
+        if (pos !== -1) {
+            var imgPath = image.substr(pos + 'images/'.length);
+            image = config.bgConfig.cdn.dynamicAssetsUrl;
+            if (config.bgConfig.cdn.dynamicAssetsUrl && config.bgConfig.cdn.dynamicAssetsUrl.substr(-1) !== '/') {
+                image += '/';
+            }
+
+            image += imgPath;
         }
 
-        image += imgPath;
+        return image;
     }
-
     return image;
 }
 module.exports = {

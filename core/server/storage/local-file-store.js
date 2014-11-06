@@ -56,11 +56,12 @@ LocalFileStore.prototype.serve = function () {
 };
 //add by liuxing  add cutting image
 LocalFileStore.prototype.cuttingimage = function imageCutting(targetFilename) {
-    var originFile = targetFilename.replace('/images/','/images_sm/');
+    var originFile = targetFilename.replace('/images/','/images/images_sm/');
     return new Promise(function (resolve) {
         targetFilename  = path.join(config.paths.appRoot,targetFilename);
-        var targetThumb = targetFilename.replace('/images/','/images_sm/');
+        var targetThumb = targetFilename.replace('/images/','/images/images_sm/');
         var ext = path.extname(targetFilename);
+
         if(ext == '.gif'){     //if gif , copy it
             fs.copy(targetFilename,targetThumb,function(err){
                 resolve(originFile);
@@ -107,14 +108,29 @@ LocalFileStore.prototype.cuttingimage = function imageCutting(targetFilename) {
                 y = (srcHeight - targetHeight) / 2;
             }
             console.log('cutting : '+targetThumb);
-            images(img, x, y, targetWidth, targetHeight).save(targetThumb);
-            resolve(originFile);
+            // add by liuxing; make sure file dir exist;
+            ensureDir(targetThumb).then(function(){
+                images(img, x, y, targetWidth, targetHeight).save(targetThumb);
+                resolve(originFile);
+            });
+            //end add
         }
     });
 };
-
+function ensureDir(filepath){
+    return new Promise(function (resolve) {
+        var lastSlug = filepath.lastIndexOf('\/');
+        if(lastSlug > -1){
+            var dir = filepath.substr(0,lastSlug);
+            fs.ensureDir(dir,function(){
+                resolve();
+            });
+        }
+    });
+}
 LocalFileStore.prototype.copyToCDN = function(imagePath){
     var srcImage = path.join(config.paths.appRoot,imagePath);
+    imagePath = imagePath.replace('/content/images/','');
     imagePath = imagePath.replace('/content/','');
     destImage =  path.join(config.paths.images_copy_path,imagePath);
     console.log('copy : %s --> %s',srcImage,destImage);

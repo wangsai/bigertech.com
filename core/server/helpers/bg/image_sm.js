@@ -11,9 +11,8 @@ function image_sm() {
         this.image = defaultBgImg;
     }
     // 得到裁剪过后的图片
-    if (bgConfig.images_sm.dir) {
-        this.image = this.image.replace(bgConfig.default_image_path,bgConfig.images_sm_path);
-    }
-    return this.image;
+    this.image = this.image.replace(bgConfig.default_image_path,bgConfig.images_sm_path);
+
+    return util.getCDNImage(this.image);
 };
 module.exports = image_sm;

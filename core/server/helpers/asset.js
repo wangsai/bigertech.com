@@ -17,7 +17,9 @@ asset = function (context, options) {
     if (!context.match(/^favicon\.ico$/) && !context.match(/^shared/) && !context.match(/^asset/)) {
         if (isAdmin) {
             output += 'ghost/';
-        } else {
+        } else if (config.bgConfig.cdn.isProduction) {  // cdn asset
+            output = config.bgConfig.cdn.staticAssetsUrl;
+        }else{
             output += 'assets/';
         }
     }
