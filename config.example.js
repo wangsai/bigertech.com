@@ -18,7 +18,7 @@ config = {
             options: {
                 auth: {
                     user: 'bigertech@gmail.com', // mailgun username
-                    pass: 'FEIzao=2014'  // mailgun password
+                    pass: 'xxx=2014'  // mailgun password
                 }
             }
         },
