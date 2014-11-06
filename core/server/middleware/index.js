@@ -24,7 +24,10 @@ var api            = require('../api'),
     oauth2orize    = require('oauth2orize'),
     authStrategies = require('./auth-strategies'),
     utils          = require('../utils'),
+    // add by liuxing; add cookie suport
+    cookie         = require('cookie-parser'),
 
+//end add
     blogApp,
     setupMiddleware;
 
@@ -304,6 +307,7 @@ setupMiddleware = function (blogAppInstance, adminApp) {
 
     // Body parsing
     blogApp.use(bodyParser.json());
+    blogApp.use(cookie('bg-auth-cookie'));    // add cookies
     blogApp.use(bodyParser.urlencoded({extended: true}));
 
     blogApp.use(passport.initialize());

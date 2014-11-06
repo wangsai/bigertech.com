@@ -13,6 +13,10 @@ adminControllers = {
         /*jslint unparam:true*/
 
         function renderIndex() {
+            // add by liuxing clear auth token
+            res.clearCookie('auth');
+            // end add
+
             res.render('default', {
                 skip_google_fonts: config.isPrivacyDisabled('useGoogleFonts')
             });

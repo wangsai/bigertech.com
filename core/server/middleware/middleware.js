@@ -31,6 +31,22 @@ function cacheBlogApp(app) {
 function cacheOauthServer(server) {
     oauthServer = server;
 }
+/**
+ * 检测url 是否需要登录，适用于新增的链接
+ * @param req
+ */
+function needAuth(req){
+    var urls = ['positions','position'];
+    var path = req.path.substring(config.paths.subdir.length);
+    var result = false;
+    _.forEach(urls,function(item){
+        if(path.indexOf(item) !== -1){
+            result = true;
+            return ;
+        }
+    });
+    return result;
+}
 
 middleware = {
 
@@ -51,7 +67,20 @@ middleware = {
         });
 
         if (subPath.indexOf('/ghost/api/') === 0
-            && path.indexOf('/ghost/api/v0.1/authentication/') !== 0) {
+            && path.indexOf('/ghost/api/v0.1/authentication/') !== 0 || needAuth(req)) {
+            //add by liuxing  非ghost的url,从 cookie 中取得 accsessToken
+            if(needAuth(req) && req.cookies){
+                req.headers.authorization = req.cookies.auth;
+            }
+            if(req.headers.authorization){
+                if(!req.cookies){
+                    req.cookies = {};
+                }
+                if(req.headers.authorization != req.cookies.auth){
+                    res.cookie('auth', req.headers.authorization,{ expires: new Date(Date.now() +  1800000), httpOnly: true });
+                }
+            }
+            //end add
             return passport.authenticate('bearer', {session: false, failWithError: true},
                 function (err, user, info) {
                     if (err) {
