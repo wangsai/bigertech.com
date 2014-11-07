@@ -5,6 +5,7 @@ var _       = require('lodash'),
     fs      = require('fs-extra'),
     storage = require('../storage'),
     errors  = require('../errors'),
+    smushit = require('node-smushit'),
 
     upload;
 
@@ -13,6 +14,25 @@ function isImage(type, ext) {
         return true;
     }
     return false;
+}
+
+/**
+ * ### smushit Image
+ * by tracy 2014-11-07
+ * @public
+ * @param {{file}}
+ */
+
+function smushitImage(file) {
+    return new Promise( function(resolve,reject){
+        smushit.smushit(file,{
+            onComplete: function(reports){
+                console.log('11111');
+                resolve(file);
+
+            }
+        });
+    });
 }
 
 /**
@@ -50,13 +70,9 @@ upload = {
         }).then(function () {
             return store.save(options.uploadimage);
         }).then(function (url) {
-            store.copyToCDN(url);
-            if(config.bgConfig.cdn.isProduction){    //产品环境
-                store.cuttingimage(url).then(function(url_sm){
-                    store.copyToCDN(url_sm);
-                });
-            }
             return url;
+        }).then(function (url){
+            return smushitImage(url);
         }).finally(function () {
             // Remove uploaded file from tmp location
             return Promise.promisify(fs.unlink)(filepath);
